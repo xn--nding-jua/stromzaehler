@@ -1,0 +1,40 @@
+
+1.8.0
+2.8.0
+Current-Wert
+
+
+Ausgabekanäle:
+- Werte loggen
+- UDP Broadcast im lokalen Netz
+- TCP auf Anfrage
+- LED an Pi
+
+
+Datenmengen:
+
+4 byte pro Sekunde (nur current-Wert)
+
+pro Minute: 4 byte * 60 = 240 byte
+pro Stunde: 240 byte * 60 = 14400 byte = ca. 14 kB
+pro Tag: 14400 byte * 24 = 345600 byte = ca. 338 kB
+pro Monat: 345600 byte * 30 = 10368000 byte = 10125 kB = ca. 10 MB
+pro Jahr: 345600 byte * 365 = 126144000 byte = 123188 kB = ca. 121 MB
+
+Alle Werte speichern:
+pro Jahr: 121 MB * 4 = 482 MB
+
+Abspeichern ca. alle 30 Minuten, Datei danach immer schließen
+Separate Datei pro Monat oder besser pro Tag wegen Shutdown, komprimiert
+
+
+Format: 
+
+1 byte Version
+8 byte Zeitstempel
+
+Sekunden vom Tag (ein Tag hat 86400 Sekunden) - 17 Bit oder 3 byte
+1.8.0 - 5 byte - unsigned, 1 bit sparbar
+2.8.0 - 5 byte - unsigned, 1 bit sparbar
+Current-Wert - signed 4 byte
+

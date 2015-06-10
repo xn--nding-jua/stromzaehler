@@ -1,0 +1,46 @@
+allprojects {
+	group = 'de.hackerdan'
+//	version = '0.9'
+}
+
+subprojects {
+	repositories {
+		mavenCentral()
+	}
+}
+
+// this is a workaround to the current limitation of the Jenkins JDepend Plug-In which
+// cannot handle wildcards
+// see: https://issues.jenkins-ci.org/browse/JENKINS-17172
+// this task will combine all XML files into one
+import groovy.xml.*
+task jenkinsJdepend {
+    ext.inFiles = fileTree(rootProject.projectDir).include("**/build/reports/jdepend/*.xml")
+    ext.outFile = new File("${rootProject.projectDir}/jenkinsJdepend.xml")
+    inputs.files inFiles
+    outputs.file outFile
+
+    doLast {
+        def xmlFiles = []
+        inFiles.each{File file ->
+            println file
+            xmlFiles.add(new XmlSlurper().parseText(file.getText()))
+        }
+        String combinedXml = new StreamingMarkupBuilder().bind {
+            JDepend {
+                Packages {
+                    xmlFiles.each {
+                        mkp.yield it.Packages.children()
+                    }
+                }
+                Cycles {
+                    xmlFiles.each {
+                        mkp.yield it.Cycles.children()
+                    }
+                }
+            }
+        }
+        outFile.delete()
+        outFile << XmlUtil.serialize(combinedXml)
+    }
+}

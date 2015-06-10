@@ -1,0 +1,99 @@
+apply plugin: 'eclipse'
+
+// SaveActions, Formatter, UTF-8 Encoding and Project specific settings
+
+task eclipseJdtPrepare(type: Copy) {
+	// org.eclipse.jdt.core.prefs contains the formatter and errors/warnings configuration
+    from rootProject.file("config/org.eclipse.jdt.core.prefs")
+    into project.file(".settings/")
+    outputs.upToDateWhen { false }
+}
+
+task eclipseSettings(type: Copy) {
+	// contains the saveAction settings
+    from rootProject.files("config/org.eclipse.jdt.ui.prefs", "config/org.eclipse.core.resources.prefs")
+    into project.file('.settings/')
+    outputs.upToDateWhen { false }
+}
+
+task cleanEclipseJdtUi(type: Delete) {
+    delete project.file(".settings/org.eclipse.jdt.ui.prefs")
+	delete project.file(".settings/org.eclipse.jdt.core.prefs")
+    delete project.file(".settings/org.eclipse.core.resources.prefs")
+}
+
+// Findbugs
+
+task eclipseFindbugs(type: Copy) {
+    from rootProject.files("config/findbugs-exclude-filter.xml", "config/edu.umd.cs.findbugs.core.prefs")
+    into project.file('.settings/')
+    outputs.upToDateWhen { false }
+}
+
+task cleanEclipseFindbugs(type: Delete) {
+    delete project.file(".settings/findbugs-exclude-filter.xml")
+    delete project.file(".settings/edu.umd.cs.findbugs.core.prefs")
+}
+
+eclipse {
+    project {
+        natures 'edu.umd.cs.findbugs.plugin.eclipse.findbugsNature'
+        buildCommand 'edu.umd.cs.findbugs.plugin.eclipse.findbugsBuilder'
+    }
+}
+
+// PMD
+
+task eclipsePmd(type: Copy) {
+    from rootProject.file("config")
+    into project.file("./")
+    include ("pmd", "pmdruleset.xml")
+    rename (/(.*)/, '.$1')
+    outputs.upToDateWhen { false }
+}
+
+task cleanEclipsePmd(type: Delete) {
+    delete project.file(".pmd")
+    delete project.file(".pmdruleset.xml")
+}
+
+eclipse {
+    project {
+        natures 'net.sourceforge.pmd.eclipse.plugin.pmdNature'
+        buildCommand 'net.sourceforge.pmd.eclipse.plugin.pmdBuilder'
+    }
+}
+
+// Checkstyle
+
+task eclipseCheckstylePrepare(type: Copy) {
+    from rootProject.files("config/checkstyle.xml")
+    into project.file('.settings/')
+    outputs.upToDateWhen { false }
+}
+
+task eclipseCheckstyle(type: Copy) {
+    from rootProject.file("config")
+    into project.file("./")
+    include ("checkstyle")
+    rename (/(.*)/, '.$1')
+    outputs.upToDateWhen { false }
+}
+
+task cleanEclipseCheckstyle(type: Delete) {
+    delete project.file(".checkstyle")
+    delete project.file(".settings/checkstyle.xml")
+}
+
+eclipse {
+    project {
+        natures 'net.sf.eclipsecs.core.CheckstyleNature'
+        buildCommand 'net.sf.eclipsecs.core.CheckstyleBuilder'
+    }
+}
+
+// Dependencies
+
+tasks["eclipseJdt"].dependsOn(eclipseJdtPrepare, eclipseCheckstylePrepare)
+tasks["cleanEclipse"].dependsOn(cleanEclipseJdtUi, cleanEclipseFindbugs, cleanEclipsePmd, cleanEclipseCheckstyle)
+tasks["eclipse"].dependsOn(eclipseSettings, eclipseFindbugs, eclipsePmd, eclipseCheckstyle)

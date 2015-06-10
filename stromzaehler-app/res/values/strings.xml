@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Strom</string>
+    <string name="app_description">Zeigt den aktuellen Strombezug bzw. die Einspeisung an. Zeigt die Zählerwerte 1.8.0 und 2.8.0 insgesamt, sowie dessen Tagessummen an. Enthält eine einfache Messfunktion für Verbraucher.</string>
+
+    <string name="label180">1.8.0 Bezug</string>
+    <string name="label280">2.8.0 Einspeisung</string>
+    <string name="labelCurrent">Aktueller Wert</string>
+    <string name="label180day">Bezug heute</string>
+    <string name="label280day">Einspeisung heute</string>
+    <string name="labelMax">Maximum</string>
+    <string name="labelDiff">Aktuelle Differenz</string>
+    <string name="labelMin">Minimum</string>
+
+    <string name="menu_about">Info</string>
+    
+    <string name="aboutCopyright">© 2014&#8211;2015 Daniel Hirscher</string>
+    <string name="aboutLicense">Lizenz: EPL v1.0</string>
+    <string name="aboutWarranty">Die Software wird "so wie sie ist" ohne irgendwelche Gewährleistungen, weder ausdrücklich noch stillschweigend, geliefert, einschließlich, aber nicht begrenzt darauf, ohne Mängelgewährleistung und Anpassungsgewährleistung an einen besonderen Gebrauch; alle Risiken, was die Ergebnisse und Leistungen dieser Software betrifft, gehen zu Lasten des Benutzers. Sollte sich das Programm als fehlerhaft herausstellen, gehen alle Reparaturkosten oder die Wiederherstellung des Zustands zu Lasten des Benutzers.</string>
+    <string name="aboutUrl">http://www.daniel-hirscher.de</string>
+    
+</resources>

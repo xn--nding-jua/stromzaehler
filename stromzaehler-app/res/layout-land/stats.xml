@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@drawable/bg_tiles"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/labelCurrent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5pt"
+        android:text="@string/labelCurrent" />
+
+    <TextView
+        android:id="@+id/valueCurrent"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/labelCurrent"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/bg_label"
+        android:gravity="right"
+        android:text="W"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/label180"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/valueCurrent"
+        android:layout_toLeftOf="@+id/timestamp"
+        android:layout_marginTop="15pt"
+        android:text="@string/label180" />
+
+    <TextView
+        android:id="@+id/value180"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/label180"
+        android:layout_toLeftOf="@+id/timestamp"
+        android:background="@drawable/bg_label"
+        android:gravity="right"
+        android:text="kWh"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/label280"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/value180"
+        android:layout_toLeftOf="@+id/timestamp"
+        android:layout_marginTop="5pt"
+        android:text="@string/label280" />
+
+    <TextView
+        android:id="@+id/value280"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/label280"
+        android:layout_toLeftOf="@+id/timestamp"
+        android:background="@drawable/bg_label"
+        android:gravity="right"
+        android:text="kWh"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/label180day"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/valueCurrent"
+        android:layout_toRightOf="@+id/timestamp"
+        android:layout_marginTop="15pt"
+        android:text="@string/label180day" />
+
+    <TextView
+        android:id="@+id/value180day"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/label180day"
+        android:layout_toRightOf="@+id/timestamp"
+        android:background="@drawable/bg_label"
+        android:gravity="right"
+        android:text="kWh"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/label280day"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/value180day"
+        android:layout_toRightOf="@+id/timestamp"
+        android:layout_marginTop="5pt"
+        android:text="@string/label280day" />
+
+    <TextView
+        android:id="@+id/value280day"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/label280day"
+        android:layout_toRightOf="@+id/timestamp"
+        android:background="@drawable/bg_label"
+        android:gravity="right"
+        android:text="kWh"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/timestamp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:text="--:--:--" />
+
+</RelativeLayout>

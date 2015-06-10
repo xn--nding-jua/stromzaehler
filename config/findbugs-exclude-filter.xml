@@ -1,0 +1,69 @@
+<FindBugsFilter>
+	<!-- Acts like a exclude filter. Lists all bugs that are ignored. -->
+
+	<!-- Explanations:
+		EI    expose internal representation - mainly for library development
+		EI2   similar to EI
+	-->
+	<Match>
+		<Bug code="EI,EI2" />
+	</Match>
+
+  <!-- suppress android generatet R.java -->
+  <Match>
+    <Class name="~.*\.R\$.*"/>
+    <Bug pattern="NM_CLASS_NAMING_CONVENTION"/>
+  </Match>
+
+	<!-- suppress all Test classes -->
+   <!--
+	<Match>
+		<Class name="~.*Test.*" />
+	</Match>
+	-->
+
+	<!-- don't report Se on Log fields from commons logging because we are using log4j as implementation
+		the interface itself org.apache.commons.logging.Log is not serializable (by design),
+		however most implementations are; we are using log4j which is serializable
+	-->
+   <!--
+	<Match>
+		<Field type="org.apache.commons.logging.Log" />
+		<Bug code="Se" />
+	</Match>
+	-->
+
+   <!-- don't report write to static field in OSGi plug-in activators -->
+   <!--
+   <Match>
+      <Class name="~.*\.Activator" />
+      <Field name="plugin" />
+      <Bug code="ST" />
+   </Match>
+	-->
+
+   <!-- don't report MS for Eclipse PDE Messages Classes -->
+   <!--
+   <Match>
+      <Class name="~.*\.Messages" />
+      <Bug pattern="MS_SHOULD_BE_FINAL" />
+   </Match>
+	-->
+   
+   <!-- don't report EMFs Switch, Package and Factory -->
+   <!--
+   <Match>
+       <Or>
+          <Class name="~.*\.util\..*(Switch|AdapterFactory)" />
+       </Or>
+       <Bug pattern="MS_PKGPROTECT" />
+   </Match>
+   <Match>
+       <Or>
+          <Class name="~.*\..*(Package|Factory)" />
+       </Or>
+       <Bug pattern="IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION" />
+   </Match>
+	-->
+   
+</FindBugsFilter>

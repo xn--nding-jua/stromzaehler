@@ -1,0 +1,17 @@
+apply from:file("${rootProject.projectDir}/gradle/android.gradle").absolutePath
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:1.0.+'
+    }
+}
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+
+dependencies {
+    compile project(':stromzaehler-model')
+}

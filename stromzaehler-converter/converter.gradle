@@ -1,0 +1,28 @@
+apply plugin: 'application'
+apply plugin: 'jacoco'
+apply from:file("${rootProject.projectDir}/gradle/metrics.gradle").absolutePath
+apply from:file("${rootProject.projectDir}/gradle/eclipse.gradle").absolutePath
+
+version = '1.0'
+
+mainClassName = "de.hackerdan.strom.converter.Main"
+distZip.dependsOn build
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+dependencies {
+    compile project(':stromzaehler-model')
+	compile 'org.apache.logging.log4j:log4j-api:2.1'
+	compile 'org.apache.logging.log4j:log4j-core:2.1'
+    testCompile 'junit:junit:4.11'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+test {
+	ignoreFailures = true
+    outputs.upToDateWhen { false } // always run tests (also needed by jenkins)
+}
