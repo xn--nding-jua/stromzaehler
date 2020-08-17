@@ -24,6 +24,8 @@ stage/
 *.rar
 *.tar
 *.zip
+*.tar.gz
+*.tgz
 
 # ---------- Logs and databases
 *.log
@@ -60,3 +62,10 @@ jenkinsJdepend.xml
 # ---------- Backup files
 *~
 .nb-gradle
+/stromzaehler-model/nbproject/private/
+/stromzaehler-model/de.hackerdan.sml.model/nbproject/private/
+/stromzaehler-model/de.hackerdan.sml.model/dist/
+/stromzaehler-converter/de.hackerdan.strom.converter/nbproject/private/
+/stromzaehler-converter/de.hackerdan.strom.converter/dist/
+/stromzaehler-reader/de.hackerdan.sml/nbproject/private/
+/stromzaehler-reader/de.hackerdan.sml/dist/

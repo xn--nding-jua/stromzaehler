@@ -1,7 +1,0 @@
-include 'stromzaehler-model', 'stromzaehler-reader', 'stromzaehler-app', 'stromzaehler-converter'
-
-rootProject.name = 'stromzaehler'
-
-rootProject.children.each {
-	it.buildFileName = it.name + '.gradle' - 'stromzaehler-'
-}
