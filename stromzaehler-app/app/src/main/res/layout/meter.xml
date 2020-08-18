@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@drawable/bg_tiles"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/labelMax"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5pt"
+        android:text="@string/labelMax" />
+
+    <TextView
+        android:id="@+id/valueMax"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/labelMax"
+        android:layout_centerHorizontal="true"
+        android:background="@mipmap/bg_label"
+        android:gravity="right"
+        android:text=" W"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/labelDiff"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/valueMax"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5pt"
+        android:text="@string/labelDiff" />
+
+    <TextView
+        android:id="@+id/valueDiff"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/labelDiff"
+        android:layout_centerHorizontal="true"
+        android:background="@mipmap/bg_label"
+        android:gravity="right"
+        android:text=" W"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/labelMin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/valueDiff"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5pt"
+        android:text="@string/labelMin" />
+
+    <TextView
+        android:id="@+id/valueMin"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/labelMin"
+        android:layout_centerHorizontal="true"
+        android:background="@mipmap/bg_label"
+        android:gravity="right"
+        android:text=" W"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/timestamp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:text="--:--:--" />
+
+    <ImageButton
+        android:id="@+id/buttonReset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="8dp"
+        android:layout_marginRight="8dp"
+        android:adjustViewBounds="true"
+        android:background="@drawable/button"
+        android:contentDescription="Reset"
+        android:onClick="resetMeter"
+        android:src="@mipmap/bt_reset" />
+
+</RelativeLayout>
