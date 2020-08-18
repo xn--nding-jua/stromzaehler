@@ -7,6 +7,9 @@ package de.hackerdan.stromzaehler;
 import java.text.NumberFormat;
 
 import android.app.Activity;
+import android.graphics.Point;
+import android.graphics.Rect;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -28,7 +31,7 @@ public class CurrentBroadcastUpdaterTask extends BroadcastUpdaterTask
    @Override
    protected void updateView(final PvValue value, final Activity activity)
    {
-      final int current = value.getCurrent() / 10;
+      final int current = value.getCurrent() / 10; // Stromzähler liefert Kommastellen mit
 
       final TextView textViewCurrent = (TextView) activity.findViewById(R.id.valueCurrent);
       textViewCurrent.setText(nf.format(current) + " W");
@@ -52,26 +55,32 @@ public class CurrentBroadcastUpdaterTask extends BroadcastUpdaterTask
       activity.findViewById(R.id.plant).setVisibility(current > 0 ? View.VISIBLE : View.INVISIBLE);
 
       // move the energy bar depending on current power
-      RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(50, 50);
       float Pmax=5000; // +100%
       float Pmin=-600; // -100%
+
+      Point displaySize = new Point();
+      activity.getWindowManager().getDefaultDisplay().getRealSize(displaySize);
+      float width = displaySize.x;
       int leftMargin;
+
       if (current<0) {
-         leftMargin = Math.round(175 - (175*(current/Pmin))); // 0=-100%, 175=0%, 350=100%
+         leftMargin = Math.round((width/2) - ((width/2)*(current/Pmin))); // 0=-100%, (width/2)=0%, width=100%
       }else{
          if (current<=Pmax) {
-            leftMargin = Math.round(175 + (175 * (current / Pmax))); // 0=-100%, 175=0%, 350=100%
+            leftMargin = Math.round((width/2) + 0.9f*((width/2) * (current / Pmax))); // 0=-100%, (width/2)=0%, width=100%
          }else{
             // end of bar
-            leftMargin = 350;
+            leftMargin = Math.round(width);
          }
       }
-      params.setMargins(leftMargin, -100, 0, 0);
-      activity.findViewById(R.id.imageArrow).setLayoutParams(params);
+      final ImageView arrow = (ImageView)activity.findViewById(R.id.imageArrow);
+      RelativeLayout.LayoutParams arrow_lp = (RelativeLayout.LayoutParams)arrow.getLayoutParams();
+      arrow_lp.setMargins(leftMargin, -100, 0, 0);
+      arrow.setLayoutParams(arrow_lp);
 
       // show allowed loads
       switchImage(activity, current, -100, R.id.imageCharge, R.mipmap.charge, R.mipmap.charge_off);
-      switchImage(activity, current, -1500, R.id.imageWama, R.mipmap.wama, R.mipmap.wama_off);
+      switchImage(activity, current, -300, R.id.imageWama, R.mipmap.wama, R.mipmap.wama_off);
    }
 
    private static void switchImage(final Activity activity, final int current, final int minWatt, final int imageId,
