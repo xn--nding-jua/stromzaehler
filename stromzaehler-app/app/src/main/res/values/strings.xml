@@ -19,6 +19,6 @@
     <string name="aboutLicense">Lizenz: EPL v1.0</string>
     <string name="aboutWarranty">Die Software wird "so wie sie ist" ohne irgendwelche Gewährleistungen, weder ausdrücklich noch stillschweigend, geliefert, einschließlich, aber nicht begrenzt darauf, ohne Mängelgewährleistung und Anpassungsgewährleistung an einen besonderen Gebrauch; alle Risiken, was die Ergebnisse und Leistungen dieser Software betrifft, gehen zu Lasten des Benutzers. Sollte sich das Programm als fehlerhaft herausstellen, gehen alle Reparaturkosten oder die Wiederherstellung des Zustands zu Lasten des Benutzers.</string>
     <string name="aboutUrl">http://www.daniel-hirscher.de</string>
-    <string name="aboutUrl2">http://www.pcdimmer.de</string>
+    <string name="aboutUrl2">https://www.pcdimmer.de</string>
 
 </resources>
