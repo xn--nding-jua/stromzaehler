@@ -1,0 +1,8 @@
+{
+	"SerialPort":"/dev/ttyUSB0",
+	"Baudrate":9600,
+	"IPBroadcastAddress":"192.168.0.255",
+	"IPBroadcastPort":51354,
+	"WiringPiBinaryPath":"/usr/local/bin/gpio",
+	"WiringPiLEDGPIO":0
+}

@@ -54,7 +54,7 @@ public class Producer
 
       try
       {
-         setupComPort("/dev/ttyUSB0");
+         setupComPort(SmlConfig.getInstance().getSerialPort());
 
          while (true)
          {
@@ -148,7 +148,7 @@ public class Producer
 
       try
       {
-         serialPort.setSerialPortParams(9600, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
+         serialPort.setSerialPortParams(SmlConfig.getInstance().getBaudrate(), SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
          serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_RTSCTS_IN);
       }
       catch (final UnsupportedCommOperationException e)

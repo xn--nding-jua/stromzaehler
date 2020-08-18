@@ -4,6 +4,7 @@
 
 package de.hackerdan.sml.consumers;
 
+import de.hackerdan.sml.SmlConfig;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -20,9 +21,6 @@ import de.hackerdan.sml.model.PvValue;
  */
 public final class Broadcaster
 {
-   private static final String BROADCAST_ADDRESS = "192.168.1.255"; // NOPMD broadcast address
-   private static final int UDP_PORT = 51354;
-
    private static Logger logger = LogManager.getLogger(Broadcaster.class);
 
    private final FullDataConverter converter = new FullDataConverter();
@@ -34,10 +32,10 @@ public final class Broadcaster
    {
       try
       {
-         final InetAddress inetAddress = InetAddress.getByName(BROADCAST_ADDRESS);
+         final InetAddress inetAddress = InetAddress.getByName(SmlConfig.getInstance().getIPBroadcastAddress());
          socket = new DatagramSocket();
          socket.setBroadcast(true);
-         packet = new DatagramPacket(new byte[FullDataConverter.LEN], FullDataConverter.LEN, inetAddress, UDP_PORT);
+         packet = new DatagramPacket(new byte[FullDataConverter.LEN], FullDataConverter.LEN, inetAddress, SmlConfig.getInstance().getIPBroadcastPort());
       }
       catch (final IOException e)
       {
