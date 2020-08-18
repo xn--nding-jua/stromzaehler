@@ -58,6 +58,60 @@
         android:layout_centerHorizontal="true"
         android:text="--:--:--" />
 
+    <ImageView
+        android:id="@+id/imageEnergybar"
+        android:layout_centerInParent="true"
+        android:layout_width="400dp"
+        android:layout_height="100dp"
+        android:layout_below="@+id/timestamp"
+        android:layout_marginTop="29dp"
+        android:contentDescription="Energiestatus"
+        android:src="@mipmap/energybar" />
+
+    <ImageView
+        android:id="@+id/imageArrow"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/imageEnergybar"
+        android:layout_marginTop="-100dp"
+        android:layout_marginLeft="170dp"
+        android:contentDescription="Aktuelle Leistung"
+        android:src="@mipmap/arrow" />
+
+    <TextView
+        android:id="@+id/textMinus100Percent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/imageEnergybar"
+        android:layout_marginLeft="170dp"
+        android:layout_marginTop="-62dp"
+        android:text="-600W"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/text0Percent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/imageEnergybar"
+        android:layout_marginLeft="325dp"
+        android:layout_marginTop="-62dp"
+        android:text="+/- 0W"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/text100Percent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/imageEnergybar"
+        android:layout_marginLeft="500dp"
+        android:layout_marginTop="-62dp"
+        android:text="+5kW"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
     <ImageButton
         android:id="@+id/buttonStats"
         android:layout_width="wrap_content"
