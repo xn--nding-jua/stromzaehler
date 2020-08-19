@@ -7,8 +7,6 @@ package de.hackerdan.stromzaehler;
 import java.text.NumberFormat;
 
 import android.app.Activity;
-import android.graphics.Point;
-import android.graphics.Rect;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.ImageView;
@@ -33,6 +31,8 @@ public class CurrentBroadcastUpdaterTask extends BroadcastUpdaterTask
    {
       final int current = value.getCurrent() / 10; // Stromzähler liefert Kommastellen mit
 
+      // *********************************************************************************
+      // update the text-field and show/hide pictures
       final TextView textViewCurrent = (TextView) activity.findViewById(R.id.valueCurrent);
       textViewCurrent.setText(nf.format(current) + " W");
       final int color;
@@ -54,28 +54,49 @@ public class CurrentBroadcastUpdaterTask extends BroadcastUpdaterTask
       activity.findViewById(R.id.sun).setVisibility(current < 0 ? View.VISIBLE : View.INVISIBLE);
       activity.findViewById(R.id.plant).setVisibility(current > 0 ? View.VISIBLE : View.INVISIBLE);
 
+
+      // *********************************************************************************
       // move the energy bar depending on current power
       float Pmax=5000; // +100%
       float Pmin=-600; // -100%
 
-      Point displaySize = new Point();
-      activity.getWindowManager().getDefaultDisplay().getRealSize(displaySize);
-      float width = displaySize.x;
-      int leftMargin;
+      // get display-width
+      //DisplayMetrics displaymetrics = activity.getResources().getDisplayMetrics();
+      //float width = displaymetrics.density * displaymetrics.widthPixels;
+      DisplayMetrics displaymetrics = new DisplayMetrics();
+      activity.getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+      float screenWidth = 0.85f*displaymetrics.widthPixels;
 
+      /*
+      // handle landscape/portrait differently
+      int orientation = activity.getResources().getConfiguration().orientation;
+      if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+         // In landscape
+      } else {
+         // In portrait
+      }
+      */
+
+      // calculate the position depending on the power and move arrow
+      int leftMargin;
       if (current<0) {
-         leftMargin = Math.round((width/2) - ((width/2)*(current/Pmin))); // 0=-100%, (width/2)=0%, width=100%
-      }else{
-         if (current<=Pmax) {
-            leftMargin = Math.round((width/2) + 0.9f*((width/2) * (current / Pmax))); // 0=-100%, (width/2)=0%, width=100%
+         if (current>=Pmin) {
+            leftMargin = Math.round((screenWidth / 2) - ((screenWidth / 2) * (current / Pmin))); // 0=-100%, (width/2)=0%, width=100%
          }else{
             // end of bar
-            leftMargin = Math.round(width);
+            leftMargin = 0;
+         }
+      }else{
+         if (current<=Pmax) {
+            leftMargin = Math.round((screenWidth/2) + ((screenWidth/2) * (current / Pmax))); // 0=-100%, (width/2)=0%, width=100%
+         }else{
+            // end of bar
+            leftMargin = Math.round(screenWidth);
          }
       }
       final ImageView arrow = (ImageView)activity.findViewById(R.id.imageArrow);
       RelativeLayout.LayoutParams arrow_lp = (RelativeLayout.LayoutParams)arrow.getLayoutParams();
-      arrow_lp.setMargins(leftMargin, -100, 0, 0);
+      arrow_lp.setMargins(leftMargin, -300, 0, 0);
       arrow.setLayoutParams(arrow_lp);
 
       // show allowed loads
