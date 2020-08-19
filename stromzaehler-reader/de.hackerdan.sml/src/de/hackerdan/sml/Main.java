@@ -4,6 +4,8 @@
 
 package de.hackerdan.sml;
 
+import de.hackerdan.sml.consumers.TCPServer.TCPCMDServer;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import java.io.BufferedWriter;
@@ -64,8 +66,7 @@ public final class Main
             // copy JSON-config to config-class
             SmlConfig.getInstance().setSerialPort(jsonconfig.getString("SerialPort"));
             SmlConfig.getInstance().setBaudrate(jsonconfig.getInt("Baudrate"));
-            SmlConfig.getInstance().setIPBroadcastAddress(jsonconfig.getString("IPBroadcastAddress"));
-            SmlConfig.getInstance().setIPBroadcastPort(jsonconfig.getInt("IPBroadcastPort"));
+            SmlConfig.getInstance().setServerIPPort(jsonconfig.getInt("ServerIPPort"));
             SmlConfig.getInstance().setWiringPiBinaryPath(jsonconfig.getString("WiringPiBinaryPath"));
             SmlConfig.getInstance().setWiringPiLEDGPIO(jsonconfig.getInt("WiringPiLEDGPIO"));
             
@@ -82,6 +83,8 @@ public final class Main
       final Consumer consumer = new Consumer();
       final Producer producer = new Producer(consumer);
 
+      new TCPCMDServer().start();
+      
       producer.start();
    }
 }

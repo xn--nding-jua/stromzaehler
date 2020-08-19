@@ -4,9 +4,9 @@
 
 package de.hackerdan.sml;
 
-import de.hackerdan.sml.consumers.Broadcaster;
 import de.hackerdan.sml.consumers.DailyFileWriter;
 import de.hackerdan.sml.consumers.LedHardwareFeedback;
+import de.hackerdan.sml.consumers.TCPServer;
 import de.hackerdan.sml.model.PvValue;
 
 /**
@@ -17,13 +17,12 @@ import de.hackerdan.sml.model.PvValue;
 public class Consumer
 {
    private final DailyFileWriter dataWriter = new DailyFileWriter();
-   private final Broadcaster broadcaster = new Broadcaster();
    private final LedHardwareFeedback ledFeedback = new LedHardwareFeedback();
 
    public void consume(final PvValue values)
    {
       dataWriter.write(values);
-      broadcaster.broadcast(values);
+      TCPServer.model = values;
       ledFeedback.compute(values);
    }
 }

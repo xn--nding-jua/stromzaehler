@@ -38,7 +38,7 @@ public class CurrentActivity extends Activity
       findViewById(R.id.plant).setVisibility(View.INVISIBLE);
       ((ImageView) findViewById(R.id.imageCharge)).setImageResource(R.mipmap.charge_off);
       ((ImageView) findViewById(R.id.imageWama)).setImageResource(R.mipmap.wama_off);
-      task = new CurrentBroadcastUpdaterTask(this).execute();
+      task = new CurrentTCPUpdaterTask(this).execute();
    }
 
    @Override
@@ -60,6 +60,12 @@ public class CurrentActivity extends Activity
    public void openMeter(@SuppressWarnings("unused") final View view)
    {
       final Intent intent = new Intent(this, MeterActivity.class);
+      startActivity(intent);
+   }
+
+   public void openSetup(final View view)
+   {
+      final Intent intent = new Intent(this, SettingsActivity.class);
       startActivity(intent);
    }
 

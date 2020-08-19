@@ -13,13 +13,13 @@ import de.hackerdan.sml.model.PvValue;
 /**
  * Display stats values.
  */
-public class StatsBroadcastUpdaterTask extends BroadcastUpdaterTask
+public class StatsTCPUpdaterTask extends TCPUpdaterTask
 {
    private static final String KWH = " kWh";
    private final NumberFormat nf1 = NumberFormat.getInstance();
    private final NumberFormat nf2 = NumberFormat.getInstance();
 
-   public StatsBroadcastUpdaterTask(final Activity activity)
+   public StatsTCPUpdaterTask(final Activity activity)
    {
       super(activity);
       nf1.setMinimumFractionDigits(1);
