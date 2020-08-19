@@ -27,7 +27,7 @@ public class MeterActivity extends Activity
    protected void onResume()
    {
       super.onResume();
-      task = new MeterBroadcastUpdaterTask(this).execute();
+      task = new MeterTCPUpdaterTask(this).execute();
    }
 
    @Override
@@ -42,6 +42,6 @@ public class MeterActivity extends Activity
 
    public void resetMeter(@SuppressWarnings("unused") final View view)
    {
-      ((MeterBroadcastUpdaterTask) task).reset();
+      ((MeterTCPUpdaterTask) task).reset();
    }
 }

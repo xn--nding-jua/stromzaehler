@@ -24,7 +24,7 @@ public class StatsActivity extends Activity
    protected void onResume()
    {
       super.onResume();
-      task = new StatsBroadcastUpdaterTask(this).execute();
+      task = new StatsTCPUpdaterTask(this).execute();
    }
 
    @Override

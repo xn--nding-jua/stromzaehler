@@ -14,8 +14,7 @@ public class SmlConfig{
     
     private String SerialPort = "/dev/ttyUSB0";
     private int Baudrate = 9600;
-    private String IPBroadcastAddress = "192.168.0.255";
-    private int IPBroadcastPort = 51354;
+    private int ServerIPPort = 51354;
     private String WiringPiBinaryPath = "/usr/local/bin/gpio";
     private int WiringPiLEDGPIO = 0;
     
@@ -33,11 +32,8 @@ public class SmlConfig{
     public void setBaudrate(int value) { Baudrate = value; }
     public int getBaudrate() { return Baudrate; }
 
-    public void setIPBroadcastAddress(String value) { IPBroadcastAddress = value; }
-    public String getIPBroadcastAddress() { return IPBroadcastAddress; }
-
-    public void setIPBroadcastPort(int value) { IPBroadcastPort = value; }
-    public int getIPBroadcastPort() { return IPBroadcastPort; }
+    public void setServerIPPort(int value) { ServerIPPort = value; }
+    public int getServerIPPort() { return ServerIPPort; }
 
     public void setWiringPiBinaryPath(String port) { WiringPiBinaryPath = port; }
     public String getWiringPiBinaryPath() { return WiringPiBinaryPath; }

@@ -13,7 +13,7 @@ import de.hackerdan.sml.model.PvValue;
 /**
  * Display meter values.
  */
-public class MeterBroadcastUpdaterTask extends BroadcastUpdaterTask
+public class MeterTCPUpdaterTask extends TCPUpdaterTask
 {
    private static final String W = " W";
    private final NumberFormat nf = NumberFormat.getInstance();
@@ -23,7 +23,7 @@ public class MeterBroadcastUpdaterTask extends BroadcastUpdaterTask
    private double max;
    private volatile boolean reset = true;
 
-   public MeterBroadcastUpdaterTask(final Activity activity)
+   public MeterTCPUpdaterTask(final Activity activity)
    {
       super(activity);
       nf.setMinimumFractionDigits(1);

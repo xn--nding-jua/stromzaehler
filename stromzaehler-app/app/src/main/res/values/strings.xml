@@ -20,5 +20,20 @@
     <string name="aboutWarranty">Die Software wird "so wie sie ist" ohne irgendwelche Gewährleistungen, weder ausdrücklich noch stillschweigend, geliefert, einschließlich, aber nicht begrenzt darauf, ohne Mängelgewährleistung und Anpassungsgewährleistung an einen besonderen Gebrauch; alle Risiken, was die Ergebnisse und Leistungen dieser Software betrifft, gehen zu Lasten des Benutzers. Sollte sich das Programm als fehlerhaft herausstellen, gehen alle Reparaturkosten oder die Wiederherstellung des Zustands zu Lasten des Benutzers.</string>
     <string name="aboutUrl">http://www.daniel-hirscher.de</string>
     <string name="aboutUrl2">https://www.pcdimmer.de</string>
+    <string name="title_activity_settings">SettingsActivity</string>
+
+    <!-- Preference Titles -->
+    <string name="network_header">Netzwerk</string>
+    <string name="display_header">Anzeige</string>
+
+    <!-- Network Preferences -->
+    <string name="ip_address_title">Server-IP-Adresse</string>
+    <string name="ip_port_title">Server-IP-Port</string>
+
+    <!-- Display Preferences -->
+    <string name="powermin_title">Maximale PV-Leistung in Watt</string>
+    <string name="powermax_title">Maximale Last in Watt</string>
+    <string name="power_charger_title">Leistung für Bild 1 in Watt</string>
+    <string name="power_washingmachine_title">Leistung für Bild 2 in Watt</string>
 
 </resources>

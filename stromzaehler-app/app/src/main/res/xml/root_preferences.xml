@@ -1,0 +1,41 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/network_header">
+
+        <EditTextPreference
+            app:key="serverAddress"
+            app:title="@string/ip_address_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="serverPort"
+            app:title="@string/ip_port_title"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/display_header">
+
+        <EditTextPreference
+            app:key="powerMin"
+            app:title="@string/powermin_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="powerMax"
+            app:title="@string/powermax_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="powerCharger"
+            app:title="@string/power_charger_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="powerWashingMachine"
+            app:title="@string/power_washingmachine_title"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

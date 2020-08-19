@@ -107,7 +107,7 @@
         android:layout_below="@+id/imageEnergybar"
         android:layout_marginLeft="300dp"
         android:layout_marginTop="-62dp"
-        android:text="+5kW"
+        android:text="5000W"
         android:textSize="18sp"
         android:textStyle="bold" />
 
@@ -149,12 +149,26 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
         android:layout_marginBottom="8dp"
         android:layout_marginRight="8dp"
+        android:layout_marginLeft="85dp"
         android:adjustViewBounds="true"
         android:background="@drawable/button"
         android:contentDescription="Statistiken"
         android:onClick="openMeter"
         android:src="@mipmap/bt_meter" />
+
+    <ImageButton
+        android:id="@+id/buttonSetup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="8dp"
+        android:layout_marginRight="8dp"
+        android:adjustViewBounds="true"
+        android:background="@drawable/button"
+        android:contentDescription="Setup"
+        android:onClick="openSetup"
+        android:src="@mipmap/bt_setup" />
 </RelativeLayout>

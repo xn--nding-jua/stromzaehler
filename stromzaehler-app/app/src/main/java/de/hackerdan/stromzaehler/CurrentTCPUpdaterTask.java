@@ -17,11 +17,11 @@ import de.hackerdan.sml.model.PvValue;
 /**
  * Display current values.
  */
-public class CurrentBroadcastUpdaterTask extends BroadcastUpdaterTask
+public class CurrentTCPUpdaterTask extends TCPUpdaterTask
 {
    private final NumberFormat nf = NumberFormat.getInstance();
 
-   public CurrentBroadcastUpdaterTask(final Activity activity)
+   public CurrentTCPUpdaterTask(final Activity activity)
    {
       super(activity);
    }
@@ -57,8 +57,10 @@ public class CurrentBroadcastUpdaterTask extends BroadcastUpdaterTask
 
       // *********************************************************************************
       // move the energy bar depending on current power
-      float Pmax=5000; // +100%
-      float Pmin=-600; // -100%
+      float Pmax=Float.parseFloat(PrefUtils.getFromPrefs(activity, "powerMax", "5000")); // +100%
+      float Pmin=-Float.parseFloat(PrefUtils.getFromPrefs(activity, "powerMin", "600"));; // -100%
+      ((TextView)activity.findViewById(R.id.text100Percent)).setText(Integer.toString(Math.round(Pmax))+"W");
+      ((TextView)activity.findViewById(R.id.textMinus100Percent)).setText(Integer.toString(Math.round(Pmin))+"W");
 
       // get display-width
       //DisplayMetrics displaymetrics = activity.getResources().getDisplayMetrics();
@@ -100,8 +102,8 @@ public class CurrentBroadcastUpdaterTask extends BroadcastUpdaterTask
       arrow.setLayoutParams(arrow_lp);
 
       // show allowed loads
-      switchImage(activity, current, -100, R.id.imageCharge, R.mipmap.charge, R.mipmap.charge_off);
-      switchImage(activity, current, -300, R.id.imageWama, R.mipmap.wama, R.mipmap.wama_off);
+      switchImage(activity, current, -Integer.parseInt(PrefUtils.getFromPrefs(activity, "powerCharger", "100")), R.id.imageCharge, R.mipmap.charge, R.mipmap.charge_off);
+      switchImage(activity, current, -Integer.parseInt(PrefUtils.getFromPrefs(activity, "powerWashingMachine", "300")), R.id.imageWama, R.mipmap.wama, R.mipmap.wama_off);
    }
 
    private static void switchImage(final Activity activity, final int current, final int minWatt, final int imageId,
