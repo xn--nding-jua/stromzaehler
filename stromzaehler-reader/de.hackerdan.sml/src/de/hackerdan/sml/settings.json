@@ -1,7 +1,0 @@
-{
-	"SerialPort":"/dev/ttyUSB0",
-	"Baudrate":9600,
-	"ServerIPPort":51354,
-	"WiringPiBinaryPath":"/usr/local/bin/gpio",
-	"WiringPiLEDGPIO":0
-}
