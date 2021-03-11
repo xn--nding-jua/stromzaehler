@@ -62,6 +62,7 @@ class DoHourTask extends TimerTask
     @Override public void run()
     {
         // Executed every hour
+
         SML_2_Ethernet.UpdateELKSensors();
         SML_2_Ethernet.UpdateAppDataHistory();
     }
@@ -74,8 +75,8 @@ class DoSecondTask extends TimerTask
         // Reset at 12 a.m.
         if ("00:00:00".equals(SML_2_Ethernet.dtf.format(LocalDateTime.now()))) { // 16:23:12
             // Reset the yesterday-values
-            SML_2_Ethernet.value_180_yesterday=0;
-            SML_2_Ethernet.value_280_yesterday=0;
+            SML_2_Ethernet.value_180_yesterday=SML_2_Ethernet.SML2EthernetAppData.value_180;
+            SML_2_Ethernet.value_280_yesterday=SML_2_Ethernet.SML2EthernetAppData.value_280;
         }
     }
 }
@@ -95,6 +96,8 @@ public class SML_2_Ethernet {
 
     static float value_180_yesterday = 0.0f;
     static float value_280_yesterday = 0.0f;
+    static float value_180_lasthour = 0.0f;
+    static float value_280_lasthour = 0.0f;
 
     public static void main(String... args) {
         System.out.println("SML_2_Ethernet Version 1.1.0");
@@ -161,13 +164,51 @@ public class SML_2_Ethernet {
     }
 
     static void UpdateELKSensors(){
+        /*
+            // Available data
+            SML2EthernetAppData.value_180
+            SML2EthernetAppData.value_180_day
+            SML2EthernetAppData.value_280
+            SML2EthernetAppData.value_280_day
+
+            SML2EthernetAppData.Values[0].value_180_hour
+            SML2EthernetAppData.Values[0].value_280_hour
+            SML2EthernetAppData.Values[0].power_total
+            SML2EthernetAppData.Values[0].power_phase1
+            SML2EthernetAppData.Values[0].power_phase2
+            SML2EthernetAppData.Values[0].power_phase3
+            SML2EthernetAppData.Values[0].current_phase1
+            SML2EthernetAppData.Values[0].current_phase2
+            SML2EthernetAppData.Values[0].current_phase3
+            SML2EthernetAppData.Values[0].voltage_phase1
+            SML2EthernetAppData.Values[0].voltage_phase2
+            SML2EthernetAppData.Values[0].voltage_phase3
+            SML2EthernetAppData.Values[0].temperature
+
+            // Sensordata that is useful to store in ELK
+            SML2EthernetAppData.Values[0].value_180_hour // energy that has been drawn in the last hour
+            SML2EthernetAppData.Values[0].value_280_hour // energy that has been fed in in the last hour
+            SML2EthernetAppData.Values[0].power_phase1 // power in phase 1
+            SML2EthernetAppData.Values[0].power_phase2 // power in phase 2
+            SML2EthernetAppData.Values[0].power_phase3 // power in phase 3
+
+        */
+
         // TODO
-        //HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.current));
+        /*
+        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].value_180_hour));
+        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].value_280_hour));
+        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].power_phase1));
+        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].power_phase2));
+        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].power_phase3));
+        */
     }
     
     static void UpdateAppDataHistory(){
         // shift all array-data one element to the left
         for (int i=SML2EthernetAppData.Values.length-1; i>0; i--){
+            SML2EthernetAppData.Values[i].value_180_hour=SML2EthernetAppData.Values[i-1].value_180_hour;
+            SML2EthernetAppData.Values[i].value_280_hour=SML2EthernetAppData.Values[i-1].value_280_hour;
             SML2EthernetAppData.Values[i].power_total=SML2EthernetAppData.Values[i-1].power_total;
             SML2EthernetAppData.Values[i].power_phase1=SML2EthernetAppData.Values[i-1].power_phase1;
             SML2EthernetAppData.Values[i].power_phase2=SML2EthernetAppData.Values[i-1].power_phase2;
@@ -180,6 +221,10 @@ public class SML_2_Ethernet {
             SML2EthernetAppData.Values[i].voltage_phase3=SML2EthernetAppData.Values[i-1].voltage_phase3;
             SML2EthernetAppData.Values[i].temperature=SML2EthernetAppData.Values[i-1].temperature;
         }
+
+        // write current values of 1.8.0 and 2.8.0 to the value_x80_lasthour
+        SML_2_Ethernet.value_180_lasthour=SML_2_Ethernet.SML2EthernetAppData.value_180;
+        SML_2_Ethernet.value_280_lasthour=SML_2_Ethernet.SML2EthernetAppData.value_280;
     }
     
     private static class SMLReader extends Thread{
@@ -256,73 +301,71 @@ public class SML_2_Ethernet {
                                             if (entry.getObjName().toString().equals("01 00 01 08 00 FF")) {
                                                 // Energiebezugsdaten
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML_2_Ethernet.SML2EthernetAppData.value_180=value.value.asFloat();
+                                                SML2EthernetAppData.value_180=value.value.asFloat();
 
-                                                // yesterday-value has been resetted: copy new value to it
-                                                if (value_180_yesterday==0) {
-                                                    value_180_yesterday=SML_2_Ethernet.SML2EthernetAppData.value_180;
-                                                }
-                                                SML_2_Ethernet.SML2EthernetAppData.value_180_day=SML_2_Ethernet.SML2EthernetAppData.value_180-value_180_yesterday;
+                                                if (value_180_lasthour==0) value_180_lasthour=SML2EthernetAppData.value_180;
+
+                                                SML2EthernetAppData.Values[0].value_180_hour=SML2EthernetAppData.value_180-value_180_lasthour;
+                                                SML2EthernetAppData.value_180_day=SML2EthernetAppData.value_180-value_180_yesterday;
                                                 //System.out.println("Bezogene Energie:     " + value.value.asString() + " " + entry.getUnit().toString());
                                             }else if (entry.getObjName().toString().equals("01 00 02 08 00 FF")) {
                                                 // Energieeinspeisedaten
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML_2_Ethernet.SML2EthernetAppData.value_280=value.value.asFloat();
+                                                SML2EthernetAppData.value_280=value.value.asFloat();
 
-                                                // yesterday-value has been resetted: copy new value to it
-                                                if (value_280_yesterday==0) {
-                                                    value_280_yesterday=SML_2_Ethernet.SML2EthernetAppData.value_280;
-                                                }
-                                                SML_2_Ethernet.SML2EthernetAppData.value_280_day=SML_2_Ethernet.SML2EthernetAppData.value_280-value_280_yesterday;
+                                                if (value_280_lasthour==0) value_280_lasthour=SML2EthernetAppData.value_280;
+
+                                                SML2EthernetAppData.Values[0].value_280_hour=SML2EthernetAppData.value_280-value_280_lasthour;
+                                                SML2EthernetAppData.value_280_day=SML2EthernetAppData.value_280-value_280_yesterday;
                                                 //System.out.println("Eingespeiste Energie: " + value.value.asString() + " " + entry.getUnit().toString());
                                             }else if (entry.getObjName().toString().equals("01 00 10 07 00 FF")) {
                                                 // momentane Gesamtwirkleistung
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML_2_Ethernet.SML2EthernetAppData.Values[0].power_total=value.value.asFloat();
+                                                SML2EthernetAppData.Values[0].power_total=value.value.asFloat();
                                                 //System.out.println("Mom. Ges.P: " + value.value.asString() + " " + entry.getUnit().toString());
                                             }else if (entry.getObjName().toString().equals("01 00 24 07 00 FF")) {
                                                 // Wirkleistung Phase L1
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML_2_Ethernet.SML2EthernetAppData.Values[0].power_phase1=value.value.asFloat();
+                                                SML2EthernetAppData.Values[0].power_phase1=value.value.asFloat();
                                                 //System.out.println("P_L1: " + value.value.asString() + " " + entry.getUnit().toString());
                                             }else if (entry.getObjName().toString().equals("01 00 38 07 00 FF")) {
                                                 // Wirkleistung Phase L2
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML_2_Ethernet.SML2EthernetAppData.Values[0].power_phase2=value.value.asFloat();
+                                                SML2EthernetAppData.Values[0].power_phase2=value.value.asFloat();
                                                 //System.out.println("P_L2: " + value.value.asString() + " " + entry.getUnit().toString());
                                             }else if (entry.getObjName().toString().equals("01 00 4C 07 00 FF")) {
                                                 // Wirkleistung Phase L3
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML_2_Ethernet.SML2EthernetAppData.Values[0].power_phase3=value.value.asFloat();
+                                                SML2EthernetAppData.Values[0].power_phase3=value.value.asFloat();
                                                 //System.out.println("P_L3: " + value.value.asString() + " " + entry.getUnit().toString());
                                             }else if (entry.getObjName().toString().equals("01 00 1F 07 00 FF")) {
                                                 // Strom Phase L1
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML_2_Ethernet.SML2EthernetAppData.Values[0].current_phase1=value.value.asFloat();
+                                                SML2EthernetAppData.Values[0].current_phase1=value.value.asFloat();
                                             }else if (entry.getObjName().toString().equals("01 00 33 07 00 FF")) {
                                                 // Strom Phase L2
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML_2_Ethernet.SML2EthernetAppData.Values[0].current_phase2=value.value.asFloat();
+                                                SML2EthernetAppData.Values[0].current_phase2=value.value.asFloat();
                                             }else if (entry.getObjName().toString().equals("01 00 47 07 00 FF")) {
                                                 // Strom Phase L3
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML_2_Ethernet.SML2EthernetAppData.Values[0].current_phase3=value.value.asFloat();
+                                                SML2EthernetAppData.Values[0].current_phase3=value.value.asFloat();
                                             }else if (entry.getObjName().toString().equals("01 00 20 07 00 FF")) {
                                                 // Spannung Phase L1
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML_2_Ethernet.SML2EthernetAppData.Values[0].voltage_phase1=value.value.asFloat();
+                                                SML2EthernetAppData.Values[0].voltage_phase1=value.value.asFloat();
                                             }else if (entry.getObjName().toString().equals("01 00 34 07 00 FF")) {
                                                 // Spannung Phase L2
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML_2_Ethernet.SML2EthernetAppData.Values[0].voltage_phase2=value.value.asFloat();
+                                                SML2EthernetAppData.Values[0].voltage_phase2=value.value.asFloat();
                                             }else if (entry.getObjName().toString().equals("01 00 48 07 00 FF")) {
                                                 // Spannung Phase L3
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML_2_Ethernet.SML2EthernetAppData.Values[0].voltage_phase3=value.value.asFloat();
+                                                SML2EthernetAppData.Values[0].voltage_phase3=value.value.asFloat();
                                             }else if (entry.getObjName().toString().equals("01 00 60 32 00 02")) {
                                                 // Chiptemperatur
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML_2_Ethernet.SML2EthernetAppData.Values[0].temperature=value.value.asFloat();
+                                                SML2EthernetAppData.Values[0].temperature=value.value.asFloat();
                                             }else{
                                                 // unbekannte oder weitere Daten
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
@@ -464,7 +507,7 @@ public class SML_2_Ethernet {
                         switch (Answer) {
                             case "DATA":
                                 // compress the data and send GetAllTemperature-Data to client
-                                SML2EthernetAppDataArray=Compression.CompressByteArray(SML2EthernetAppDataArray);
+                                SML2EthernetAppDataArray=Compression.CompressByteArray(SML2EthernetAppDataArray, true);
                                 
                                 int ChunkSize=10000; // at the moment we can transmit everything within one single chunk... maybe on larger data it is nescessary
                                 int NumberOfChunks=(int)Math.ceil((float)SML2EthernetAppDataArray.length/(float)ChunkSize);

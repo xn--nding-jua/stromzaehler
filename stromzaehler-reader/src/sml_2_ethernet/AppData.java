@@ -3,7 +3,7 @@ package sml_2_ethernet;
 import java.nio.ByteBuffer;
 
 public class AppData {
-    public static int length = 7410;
+    public static int length = 8754;
     // 1x 2 byte
     public static short Version = 1;
     
@@ -13,8 +13,10 @@ public class AppData {
     public float value_180_day=0;
     public float value_280_day=0;
 
-    // 11x 4 byte = 44 byte
+    // 13x 4 byte = 52 byte
     public class cValues {
+        public float value_180_hour=0;
+        public float value_280_hour=0;
         public float power_total=0;
         public float power_phase1=0;
         public float power_phase2=0;
@@ -28,7 +30,7 @@ public class AppData {
         public float temperature=0;
     }
     
-    // 168x 44 byte = 7392 byte
+    // 168x 52 byte = 8736 byte
     public cValues[] Values = new cValues[168];
     
     public AppData() {
@@ -39,7 +41,7 @@ public class AppData {
     }
     
     public ByteBuffer toByteBuffer(int Elements) {
-        ByteBuffer buffer = ByteBuffer.allocate(Elements*44+18);
+        ByteBuffer buffer = ByteBuffer.allocate(Elements*52+18);
         buffer.putShort(Version);
 
         buffer.putFloat(value_180);
@@ -48,6 +50,8 @@ public class AppData {
         buffer.putFloat(value_280_day);
 
         for (int i=0; i<Elements; i++) {
+            buffer.putFloat(Values[i].value_180_hour);
+            buffer.putFloat(Values[i].value_280_hour);
             buffer.putFloat(Values[i].power_total);
             buffer.putFloat(Values[i].power_phase1);
             buffer.putFloat(Values[i].power_phase2);
@@ -77,6 +81,8 @@ public class AppData {
         value_280_day = ByteBufferData.getFloat();
 
         for (int i=0; i<Elements; i++) {
+            Values[i].value_180_hour = ByteBufferData.getFloat();
+            Values[i].value_280_hour = ByteBufferData.getFloat();
             Values[i].power_total = ByteBufferData.getFloat();
             Values[i].power_phase1 = ByteBufferData.getFloat();
             Values[i].power_phase2 = ByteBufferData.getFloat();

@@ -35,6 +35,8 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
    private final LineGraphSeries<DataPoint> Power1;
    private final LineGraphSeries<DataPoint> Power2;
    private final LineGraphSeries<DataPoint> Power3;
+   private final LineGraphSeries<DataPoint> value_180;
+   private final LineGraphSeries<DataPoint> value_280;
 
    public MeterTCPUpdaterTask(final Activity activity)
    {
@@ -50,6 +52,8 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       Power1 = new LineGraphSeries<>();
       Power2 = new LineGraphSeries<>();
       Power3 = new LineGraphSeries<>();
+      value_180 = new LineGraphSeries<>();
+      value_280 = new LineGraphSeries<>();
 
       Current1.setTitle("I_L1 [A]");
       Current2.setTitle("I_L2 [A]");
@@ -60,6 +64,8 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       Power1.setTitle("P_L1 [kW]");
       Power2.setTitle("P_L2 [kW]");
       Power3.setTitle("P_L3 [kW]");
+      value_180.setTitle("1.8.0 [kWh]");
+      value_280.setTitle("2.8.0 [kWh]");
 
 
       Current1.setColor(Color.rgb(255,0,0));
@@ -101,6 +107,15 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       Power3.setDataPointsRadius(10);
       Power3.setThickness(8);
 
+      value_180.setColor(Color.rgb(0,0,0));
+      value_180.setDrawDataPoints(false);
+      value_180.setDataPointsRadius(10);
+      value_180.setThickness(8);
+      value_280.setColor(Color.rgb(255,128,0));
+      value_280.setDrawDataPoints(false);
+      value_280.setDataPointsRadius(10);
+      value_280.setThickness(8);
+
       /*
       series1.setDrawBackground(true);
       series1.setAnimated(true);
@@ -135,6 +150,9 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       graph.addSeries(Power2);
       graph.addSeries(Power3);
 
+      graph.addSeries(value_180);
+      graph.addSeries(value_280);
+
       graph.getLegendRenderer().setVisible(true);
       graph.getLegendRenderer().setAlign(LegendRenderer.LegendAlign.TOP);
 
@@ -146,7 +164,7 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       graph.getGridLabelRenderer().setNumHorizontalLabels(4); // only 4 vertical lines because of the space
       graph.getGridLabelRenderer().setNumVerticalLabels(6); // 6 horizontal lines
       graph.getGridLabelRenderer().setHumanRounding(true);
-      graph.getGridLabelRenderer().setVerticalAxisTitle("Strom [A] / Leistung [kW]");
+      graph.getGridLabelRenderer().setVerticalAxisTitle("Strom [A] / Spannung [dV] / Leistung [kW] / Energie [kWh]");
 
 //      graph.getSecondScale().setVerticalAxisTitle("Spannung [V]");
 //      graph.getGridLabelRenderer().setVerticalLabelsSecondScaleColor(Color.BLACK);
@@ -154,8 +172,8 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
 
       graph.getViewport().setScalable(true);  // activate horizontal zooming and scrolling
       graph.getViewport().setScrollable(true);  // activate horizontal scrolling
-      //graph.getViewport().setScalableY(true);  // activate horizontal and vertical zooming and scrolling
-      //graph.getViewport().setScrollableY(true);  // activate vertical scrolling
+      graph.getViewport().setScalableY(true);  // activate horizontal and vertical zooming and scrolling
+      graph.getViewport().setScrollableY(true);  // activate vertical scrolling
    }
 
    @Override
@@ -184,6 +202,34 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
             Power1.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].power_phase1/1000.0)});
             Power2.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].power_phase2/1000.0)});
             Power3.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].power_phase3/1000.0)});
+
+            value_180.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].value_180_hour/1000.0)});
+            value_280.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].value_280_hour/1000.0)});
+
+            double HighestCurrent = Math.max(Current1.getHighestValueY(), Math.max(Current2.getHighestValueY(), Current3.getHighestValueY()));
+            double HighestVoltage = Math.max(Voltage1.getHighestValueY(), Math.max(Voltage2.getHighestValueY(), Voltage3.getHighestValueY()));
+            double HighestPower = Math.max(Power1.getHighestValueY(), Math.max(Power2.getHighestValueY(), Power3.getHighestValueY()));
+            double HighestEnergy = Math.max(value_180.getHighestValueY(), value_280.getHighestValueY());
+            double HighestYValue = Math.max(HighestCurrent, Math.max(HighestVoltage, Math.max(HighestPower, HighestEnergy)));
+
+            double LowestCurrent = Math.min(Current1.getLowestValueY(), Math.min(Current2.getLowestValueY(), Current3.getLowestValueY()));
+            double LowestVoltage = Math.min(Voltage1.getLowestValueY(), Math.min(Voltage2.getLowestValueY(), Voltage3.getLowestValueY()));
+            double LowestPower = Math.min(Power1.getLowestValueY(), Math.min(Power2.getLowestValueY(), Power3.getLowestValueY()));
+            double LowestEnergy = Math.max(value_180.getLowestValueY(), value_280.getLowestValueY());
+            double LowestYValue = Math.min(LowestCurrent, Math.min(LowestVoltage, Math.min(LowestPower, LowestEnergy)));
+
+            // scale Y-axis
+            graph.getViewport().setYAxisBoundsManual(true);
+            if (LowestYValue<0){
+               graph.getViewport().setMinY(LowestYValue * 1.1);
+            }else {
+               graph.getViewport().setMinY(LowestYValue * 0.9);
+            }
+            graph.getViewport().setMaxY(HighestYValue*1.1);
+            /*
+            graph.getSecondScale().setMinY(LowestVoltage*0.9);
+            graph.getSecondScale().setMaxY(HighestVoltage*1.1);
+            */
          } else {
             Current1.appendData(new DataPoint(d1, value.Values[0].current_phase1), false, 300); // Ampere: 0...63A
             Current2.appendData(new DataPoint(d1, value.Values[0].current_phase2), false, 300); // Ampere: 0...63A
@@ -196,28 +242,11 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
             Power1.appendData(new DataPoint(d1, value.Values[0].power_phase1/1000.0), false, 300); // kW: 0...15kW
             Power2.appendData(new DataPoint(d1, value.Values[0].power_phase2/1000.0), false, 300); // kW: 0...15kW
             Power3.appendData(new DataPoint(d1, value.Values[0].power_phase3/1000.0), false, 300); // kW: 0...15kW
+
+            value_180.appendData(new DataPoint(d1, value.Values[0].value_180_hour/1000.0), false, 300); // kWh: 0...30kWh
+            value_280.appendData(new DataPoint(d1, value.Values[0].value_280_hour/1000.0), false, 300); // kWh: 0...30kWh
          }
 
-         double HighestCurrent = Math.max(Current1.getHighestValueY(), Math.max(Current2.getHighestValueY(), Current3.getHighestValueY()));
-         double HighestVoltage = Math.max(Voltage1.getHighestValueY(), Math.max(Voltage2.getHighestValueY(), Voltage3.getHighestValueY()));
-         double HighestPower = Math.max(Power1.getHighestValueY(), Math.max(Power2.getHighestValueY(), Power3.getHighestValueY()));
-         double HighestYValue = Math.max(HighestCurrent, Math.max(HighestVoltage, HighestPower));
-         //double HighestYValue = Math.max(HighestCurrent, HighestPower);
-
-         double LowestCurrent = Math.min(Current1.getLowestValueY(), Math.min(Current2.getLowestValueY(), Current3.getLowestValueY()));
-         double LowestVoltage = Math.min(Voltage1.getLowestValueY(), Math.min(Voltage2.getLowestValueY(), Voltage3.getLowestValueY()));
-         double LowestPower = Math.min(Power1.getLowestValueY(), Math.min(Power2.getLowestValueY(), Power3.getLowestValueY()));
-         double LowestYValue = Math.min(LowestCurrent, Math.min(LowestVoltage, LowestPower));
-         //double LowestYValue = Math.min(LowestCurrent, LowestPower);
-
-         // scale Y-axis
-         graph.getViewport().setYAxisBoundsManual(true);
-         graph.getViewport().setMinY(LowestYValue*0.9);
-         graph.getViewport().setMaxY(HighestYValue*1.1);
-         /*
-         graph.getSecondScale().setMinY(LowestVoltage*0.9);
-         graph.getSecondScale().setMaxY(HighestVoltage*1.1);
-         */
          // scale X-axis
          graph.getViewport().setXAxisBoundsManual(true);
          graph.getViewport().setMinX(Power1.getLowestValueX());
@@ -230,17 +259,20 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
          Date d1 = calendar.getTime();
 
          // reset the graph
-         Current1.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].current_phase1)});
-         Current2.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].current_phase2)});
-         Current3.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].current_phase3)});
+         Current1.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].current_phase1)});
+         Current2.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].current_phase2)});
+         Current3.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].current_phase3)});
 
-         Voltage1.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].voltage_phase1/10.0)});
-         Voltage2.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].voltage_phase2/10.0)});
-         Voltage3.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].voltage_phase3/10.0)});
+         Voltage1.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].voltage_phase1/10.0)});
+         Voltage2.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].voltage_phase2/10.0)});
+         Voltage3.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].voltage_phase3/10.0)});
 
-         Power1.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].power_phase1/1000.0)});
-         Power2.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].power_phase2/1000.0)});
-         Power3.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].power_phase3/1000.0)});
+         Power1.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].power_phase1/1000.0)});
+         Power2.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].power_phase2/1000.0)});
+         Power3.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].power_phase3/1000.0)});
+
+         value_180.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].value_180_hour/1000.0)});
+         value_280.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].value_280_hour/1000.0)});
 
          for (int i=(HelperFunctions.ReceivedElements-2); i>=0; i--) {
             calendar.add(Calendar.HOUR_OF_DAY, 1);
@@ -255,25 +287,26 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
             Power1.appendData(new DataPoint(d1, value.Values[i].power_phase1/1000.0), false, 300);
             Power2.appendData(new DataPoint(d1, value.Values[i].power_phase2/1000.0), false, 300);
             Power3.appendData(new DataPoint(d1, value.Values[i].power_phase3/1000.0), false, 300);
+            value_180.appendData(new DataPoint(d1, value.Values[i].value_180_hour/1000.0), false, 300);
+            value_280.appendData(new DataPoint(d1, value.Values[i].value_280_hour/1000.0), false, 300);
          }
-
-         double HighestCurrent = Math.max(Current1.getHighestValueY(), Math.max(Current2.getHighestValueY(), Current3.getHighestValueY()));
-         double HighestVoltage = Math.max(Voltage1.getHighestValueY(), Math.max(Voltage2.getHighestValueY(), Voltage3.getHighestValueY()));
-         double HighestPower = Math.max(Power1.getHighestValueY(), Math.max(Power2.getHighestValueY(), Power3.getHighestValueY()));
-         double HighestYValue = Math.max(HighestCurrent, Math.max(HighestVoltage, HighestPower));
-         //double HighestYValue = Math.max(HighestCurrent, HighestPower);
-
-         double LowestCurrent = Math.min(Current1.getLowestValueY(), Math.min(Current2.getLowestValueY(), Current3.getLowestValueY()));
-         double LowestVoltage = Math.min(Voltage1.getLowestValueY(), Math.min(Voltage2.getLowestValueY(), Voltage3.getLowestValueY()));
-         double LowestPower = Math.min(Power1.getLowestValueY(), Math.min(Power2.getLowestValueY(), Power3.getLowestValueY()));
-         double LowestYValue = Math.min(LowestCurrent, Math.min(LowestVoltage, LowestPower));
-         //double LowestYValue = Math.min(LowestCurrent, LowestPower);
 
          SimpleDateFormat fmt = new SimpleDateFormat("HH:mm\ndd.MM.");
          graph.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(activity, fmt));
          graph.getGridLabelRenderer().setNumHorizontalLabels(6); // only 6 vertical lines because of the space
 
-         // scale Y-axis
+         double HighestCurrent = Math.max(Current1.getHighestValueY(), Math.max(Current2.getHighestValueY(), Current3.getHighestValueY()));
+         double HighestVoltage = Math.max(Voltage1.getHighestValueY(), Math.max(Voltage2.getHighestValueY(), Voltage3.getHighestValueY()));
+         double HighestPower = Math.max(Power1.getHighestValueY(), Math.max(Power2.getHighestValueY(), Power3.getHighestValueY()));
+         double HighestEnergy = Math.max(value_180.getHighestValueY(), value_280.getHighestValueY());
+         double HighestYValue = Math.max(HighestCurrent, Math.max(HighestVoltage, Math.max(HighestPower, HighestEnergy)));
+
+         double LowestCurrent = Math.min(Current1.getLowestValueY(), Math.min(Current2.getLowestValueY(), Current3.getLowestValueY()));
+         double LowestVoltage = Math.min(Voltage1.getLowestValueY(), Math.min(Voltage2.getLowestValueY(), Voltage3.getLowestValueY()));
+         double LowestPower = Math.min(Power1.getLowestValueY(), Math.min(Power2.getLowestValueY(), Power3.getLowestValueY()));
+         double LowestEnergy = Math.max(value_180.getLowestValueY(), value_280.getLowestValueY());
+         double LowestYValue = Math.min(LowestCurrent, Math.min(LowestVoltage, Math.min(LowestPower, LowestEnergy)));
+
          // scale Y-axis
          graph.getViewport().setYAxisBoundsManual(true);
          if (LowestYValue<0){
