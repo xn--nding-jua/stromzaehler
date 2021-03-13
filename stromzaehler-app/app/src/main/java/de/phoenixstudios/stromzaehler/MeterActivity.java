@@ -48,4 +48,9 @@ public class MeterActivity extends Activity
    {
       ((MeterTCPUpdaterTask) task).showHistory();
    }
+
+   public void switchXYMeter(@SuppressWarnings("unused") final View view)
+   {
+      ((MeterTCPUpdaterTask) task).switchXY(this);
+   }
 }

@@ -11,11 +11,13 @@ import java.util.Date;
 
 import android.app.Activity;
 import android.graphics.Color;
+import android.view.View;
 import android.widget.TextView;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.LegendRenderer;
 import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter;
+import com.jjoe64.graphview.series.BarGraphSeries;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
@@ -26,6 +28,9 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
 {
    // Definitions for graph
    private boolean ResetGraph = true;
+   private boolean DoXScaleScroll = true;
+   private final LineGraphSeries<DataPoint> value_180;
+   private final LineGraphSeries<DataPoint> value_280;
    private final LineGraphSeries<DataPoint> Current1;
    private final LineGraphSeries<DataPoint> Current2;
    private final LineGraphSeries<DataPoint> Current3;
@@ -35,14 +40,14 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
    private final LineGraphSeries<DataPoint> Power1;
    private final LineGraphSeries<DataPoint> Power2;
    private final LineGraphSeries<DataPoint> Power3;
-   private final LineGraphSeries<DataPoint> value_180;
-   private final LineGraphSeries<DataPoint> value_280;
 
    public MeterTCPUpdaterTask(final Activity activity)
    {
       super(activity);
 
       // styling series
+      value_180 = new LineGraphSeries<>();
+      value_280 = new LineGraphSeries<>();
       Current1 = new LineGraphSeries<>();
       Current2 = new LineGraphSeries<>();
       Current3 = new LineGraphSeries<>();
@@ -52,9 +57,9 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       Power1 = new LineGraphSeries<>();
       Power2 = new LineGraphSeries<>();
       Power3 = new LineGraphSeries<>();
-      value_180 = new LineGraphSeries<>();
-      value_280 = new LineGraphSeries<>();
 
+      value_180.setTitle("1.8.0 [kWh]");
+      value_280.setTitle("2.8.0 [kWh]");
       Current1.setTitle("I_L1 [A]");
       Current2.setTitle("I_L2 [A]");
       Current3.setTitle("I_L3 [A]");
@@ -64,9 +69,20 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       Power1.setTitle("P_L1 [kW]");
       Power2.setTitle("P_L2 [kW]");
       Power3.setTitle("P_L3 [kW]");
-      value_180.setTitle("1.8.0 [kWh]");
-      value_280.setTitle("2.8.0 [kWh]");
 
+
+      value_180.setColor(Color.rgb(0,0,0));
+      value_180.setDrawDataPoints(false);
+      value_180.setDataPointsRadius(10);
+      value_180.setThickness(8);
+      value_180.setDrawBackground(true);
+      value_180.setBackgroundColor(Color.argb(100, 0,0,0));
+      value_280.setColor(Color.rgb(255,128,0));
+      value_280.setDrawDataPoints(false);
+      value_280.setDataPointsRadius(10);
+      value_280.setThickness(8);
+      value_280.setDrawBackground(true);
+      value_280.setBackgroundColor(Color.argb(100, 255,128,0));
 
       Current1.setColor(Color.rgb(255,0,0));
       Current1.setDrawDataPoints(false);
@@ -107,15 +123,6 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       Power3.setDataPointsRadius(10);
       Power3.setThickness(8);
 
-      value_180.setColor(Color.rgb(0,0,0));
-      value_180.setDrawDataPoints(false);
-      value_180.setDataPointsRadius(10);
-      value_180.setThickness(8);
-      value_280.setColor(Color.rgb(255,128,0));
-      value_280.setDrawDataPoints(false);
-      value_280.setDataPointsRadius(10);
-      value_280.setThickness(8);
-
       /*
       series1.setDrawBackground(true);
       series1.setAnimated(true);
@@ -135,6 +142,9 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       */
       GraphView graph = (GraphView) activity.findViewById(R.id.graph);
 
+      graph.addSeries(value_180);
+      graph.addSeries(value_280);
+
       graph.addSeries(Current1);
       graph.addSeries(Current2);
       graph.addSeries(Current3);
@@ -149,9 +159,6 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       graph.addSeries(Power1);
       graph.addSeries(Power2);
       graph.addSeries(Power3);
-
-      graph.addSeries(value_180);
-      graph.addSeries(value_280);
 
       graph.getLegendRenderer().setVisible(true);
       graph.getLegendRenderer().setAlign(LegendRenderer.LegendAlign.TOP);
@@ -172,8 +179,8 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
 
       graph.getViewport().setScalable(true);  // activate horizontal zooming and scrolling
       graph.getViewport().setScrollable(true);  // activate horizontal scrolling
-      graph.getViewport().setScalableY(true);  // activate horizontal and vertical zooming and scrolling
-      graph.getViewport().setScrollableY(true);  // activate vertical scrolling
+      //graph.getViewport().setScalableY(true);  // activate horizontal and vertical zooming and scrolling
+      //graph.getViewport().setScrollableY(true);  // activate vertical scrolling
    }
 
    @Override
@@ -191,6 +198,9 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
             graph.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(activity, fmt));
             graph.getGridLabelRenderer().setNumHorizontalLabels(4); // only 4 vertical lines because of the space
 
+            value_180.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].value_180_hour/1000.0)});
+            value_280.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].value_280_hour/1000.0)});
+
             Current1.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].current_phase1)});
             Current2.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].current_phase2)});
             Current3.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].current_phase3)});
@@ -202,9 +212,6 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
             Power1.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].power_phase1/1000.0)});
             Power2.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].power_phase2/1000.0)});
             Power3.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].power_phase3/1000.0)});
-
-            value_180.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].value_180_hour/1000.0)});
-            value_280.resetData(new DataPoint[] {new DataPoint(d1, value.Values[0].value_280_hour/1000.0)});
 
             double HighestCurrent = Math.max(Current1.getHighestValueY(), Math.max(Current2.getHighestValueY(), Current3.getHighestValueY()));
             double HighestVoltage = Math.max(Voltage1.getHighestValueY(), Math.max(Voltage2.getHighestValueY(), Voltage3.getHighestValueY()));
@@ -230,7 +237,22 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
             graph.getSecondScale().setMinY(LowestVoltage*0.9);
             graph.getSecondScale().setMaxY(HighestVoltage*1.1);
             */
+
+            value_180.setDrawDataPoints(true);
+            value_280.setDrawDataPoints(true);
+            Current1.setDrawDataPoints(true);
+            Current2.setDrawDataPoints(true);
+            Current3.setDrawDataPoints(true);
+            Voltage1.setDrawDataPoints(true);
+            Voltage2.setDrawDataPoints(true);
+            Voltage3.setDrawDataPoints(true);
+            Power1.setDrawDataPoints(true);
+            Power2.setDrawDataPoints(true);
+            Power3.setDrawDataPoints(true);
          } else {
+            value_180.appendData(new DataPoint(d1, value.Values[0].value_180_hour/1000.0), false, 300); // kWh: 0...30kWh
+            value_280.appendData(new DataPoint(d1, value.Values[0].value_280_hour/1000.0), false, 300); // kWh: 0...30kWh
+
             Current1.appendData(new DataPoint(d1, value.Values[0].current_phase1), false, 300); // Ampere: 0...63A
             Current2.appendData(new DataPoint(d1, value.Values[0].current_phase2), false, 300); // Ampere: 0...63A
             Current3.appendData(new DataPoint(d1, value.Values[0].current_phase3), false, 300); // Ampere: 0...63A
@@ -242,9 +264,6 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
             Power1.appendData(new DataPoint(d1, value.Values[0].power_phase1/1000.0), false, 300); // kW: 0...15kW
             Power2.appendData(new DataPoint(d1, value.Values[0].power_phase2/1000.0), false, 300); // kW: 0...15kW
             Power3.appendData(new DataPoint(d1, value.Values[0].power_phase3/1000.0), false, 300); // kW: 0...15kW
-
-            value_180.appendData(new DataPoint(d1, value.Values[0].value_180_hour/1000.0), false, 300); // kWh: 0...30kWh
-            value_280.appendData(new DataPoint(d1, value.Values[0].value_280_hour/1000.0), false, 300); // kWh: 0...30kWh
          }
 
          // scale X-axis
@@ -259,6 +278,9 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
          Date d1 = calendar.getTime();
 
          // reset the graph
+         value_180.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].value_180_hour/1000.0)});
+         value_280.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].value_280_hour/1000.0)});
+
          Current1.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].current_phase1)});
          Current2.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].current_phase2)});
          Current3.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].current_phase3)});
@@ -271,13 +293,29 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
          Power2.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].power_phase2/1000.0)});
          Power3.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].power_phase3/1000.0)});
 
-         value_180.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].value_180_hour/1000.0)});
-         value_280.resetData(new DataPoint[] {new DataPoint(d1, value.Values[HelperFunctions.ReceivedElements-1].value_280_hour/1000.0)});
-
          for (int i=(HelperFunctions.ReceivedElements-2); i>=0; i--) {
             calendar.add(Calendar.HOUR_OF_DAY, 1);
             d1 = calendar.getTime();
 
+            // append current data
+
+            // value 1.8.0 and 2.8.0 are showing data on an hourly base. so we have to display bars instead of a curve
+            // we could use the bar-graph-option, but then the graph will be a bit overdrawn, so stay as "bar-graphed"-line
+            // draw last value a millisecond before the current time-index
+            calendar.add(Calendar.MILLISECOND, -1);
+            d1 = calendar.getTime();
+            value_180.appendData(new DataPoint(d1, value.Values[i+1].value_180_hour/1000.0), false, 300);
+            value_280.appendData(new DataPoint(d1, value.Values[i+1].value_280_hour/1000.0), false, 300);
+            // now draw the current value
+            calendar.add(Calendar.MILLISECOND, 1);
+            d1 = calendar.getTime();
+            value_180.appendData(new DataPoint(d1, value.Values[i].value_180_hour/1000.0), false, 300);
+            value_280.appendData(new DataPoint(d1, value.Values[i].value_280_hour/1000.0), false, 300);
+            // alternatively show data as regular bar
+            //value_180.appendData(new DataPoint(d1, value.Values[i].value_180_hour/1000.0), false, 300);
+            //value_280.appendData(new DataPoint(d1, value.Values[i].value_280_hour/1000.0), false, 300);
+
+            // draw all other data
             Current1.appendData(new DataPoint(d1, value.Values[i].current_phase1), false, 300);
             Current2.appendData(new DataPoint(d1, value.Values[i].current_phase2), false, 300);
             Current3.appendData(new DataPoint(d1, value.Values[i].current_phase3), false, 300);
@@ -287,9 +325,13 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
             Power1.appendData(new DataPoint(d1, value.Values[i].power_phase1/1000.0), false, 300);
             Power2.appendData(new DataPoint(d1, value.Values[i].power_phase2/1000.0), false, 300);
             Power3.appendData(new DataPoint(d1, value.Values[i].power_phase3/1000.0), false, 300);
-            value_180.appendData(new DataPoint(d1, value.Values[i].value_180_hour/1000.0), false, 300);
-            value_280.appendData(new DataPoint(d1, value.Values[i].value_280_hour/1000.0), false, 300);
          }
+
+         // draw the current points for 180 and 280 again one hour to the future
+         calendar.add(Calendar.HOUR_OF_DAY, 1);
+         d1 = calendar.getTime();
+         value_180.appendData(new DataPoint(d1, value.Values[0].value_180_hour/1000.0), false, 300);
+         value_280.appendData(new DataPoint(d1, value.Values[0].value_280_hour/1000.0), false, 300);
 
          SimpleDateFormat fmt = new SimpleDateFormat("HH:mm\ndd.MM.");
          graph.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(activity, fmt));
@@ -320,13 +362,25 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
          graph.getSecondScale().setMaxY(HighestVoltage*1.1);
          */
          // scale X-axis
-         calendar.add(Calendar.HOUR_OF_DAY, 1);
+         calendar.add(Calendar.HOUR_OF_DAY, 3);
          d1 = calendar.getTime();
          graph.getViewport().setMaxX(d1.getTime());
-         calendar.add(Calendar.HOUR_OF_DAY, -HelperFunctions.ReceivedElements-1);
+         calendar.add(Calendar.HOUR_OF_DAY, -HelperFunctions.ReceivedElements-3);
          d1 = calendar.getTime();
          graph.getViewport().setMinX(d1.getTime());
          //graph.getViewport().setMinX(TemperatureCurve1.getLowestValueX());
+
+         value_180.setDrawDataPoints(false);
+         value_280.setDrawDataPoints(false);
+         Current1.setDrawDataPoints(false);
+         Current2.setDrawDataPoints(false);
+         Current3.setDrawDataPoints(false);
+         Voltage1.setDrawDataPoints(false);
+         Voltage2.setDrawDataPoints(false);
+         Voltage3.setDrawDataPoints(false);
+         Power1.setDrawDataPoints(false);
+         Power2.setDrawDataPoints(false);
+         Power3.setDrawDataPoints(false);
       }
    }
 
@@ -338,5 +392,18 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
    public void showHistory()
    {
       HelperFunctions.TCPCommandString="C:DATA=168";
+   }
+
+   public void switchXY(Activity activity)
+   {
+      DoXScaleScroll = !DoXScaleScroll;
+
+      GraphView graph = (GraphView) activity.findViewById(R.id.graph);
+
+      // scale/scroll X-axis
+      graph.getViewport().setScalable(DoXScaleScroll);  // activate horizontal zooming and scrolling
+      graph.getViewport().setScrollable(DoXScaleScroll);  // activate horizontal scrolling
+      graph.getViewport().setScalableY(!DoXScaleScroll);  // activate horizontal and vertical zooming and scrolling
+      graph.getViewport().setScrollableY(!DoXScaleScroll);  // activate vertical scrolling
    }
 }

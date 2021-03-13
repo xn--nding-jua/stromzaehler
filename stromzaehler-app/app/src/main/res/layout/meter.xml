@@ -49,4 +49,17 @@
         android:onClick="historyMeter"
         android:src="@mipmap/bt_meter" />
 
+    <ImageButton
+        android:id="@+id/buttonXY"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="8dp"
+        android:adjustViewBounds="true"
+        android:background="@drawable/button"
+        android:contentDescription="X/Y"
+        android:onClick="switchXYMeter"
+        android:src="@mipmap/bt_xy" />
+
 </RelativeLayout>
