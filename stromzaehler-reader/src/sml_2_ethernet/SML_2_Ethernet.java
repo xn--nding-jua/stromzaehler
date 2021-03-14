@@ -62,9 +62,6 @@ class DoHourTask extends TimerTask
     @Override public void run()
     {
         // Executed every hour
-
-        SML_2_Ethernet.UpdateELKSensors();
-        SML_2_Ethernet.UpdateAppDataHistory();
     }
 }
 
@@ -72,11 +69,19 @@ class DoSecondTask extends TimerTask
 {
     @Override public void run()
     {
+        String CurrentTime=SML_2_Ethernet.dtf.format(LocalDateTime.now());
+        
         // Reset at 12 a.m.
-        if ("00:00:00".equals(SML_2_Ethernet.dtf.format(LocalDateTime.now()))) { // 16:23:12
+        if (CurrentTime.equals("00:00:00")) { // 15:34:41
             // Reset the yesterday-values
             SML_2_Ethernet.value_180_yesterday=SML_2_Ethernet.SML2EthernetAppData.value_180;
             SML_2_Ethernet.value_280_yesterday=SML_2_Ethernet.SML2EthernetAppData.value_280;
+        }
+        
+        // Run Tasks at full hour
+        if (CurrentTime.substring(3,8).equals("00:00")) { // 34:41
+            SML_2_Ethernet.UpdateELKSensors();
+            SML_2_Ethernet.UpdateAppDataHistory();
         }
     }
 }
@@ -88,7 +93,7 @@ class cConfig{
 }
 
 public class SML_2_Ethernet {
-    static public DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");  
+    static public DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     public static AppData SML2EthernetAppData;
     public static byte[] SML2EthernetAppDataArray;
@@ -209,18 +214,23 @@ public class SML_2_Ethernet {
         for (int i=SML2EthernetAppData.Values.length-1; i>0; i--){
             SML2EthernetAppData.Values[i].value_180_hour=SML2EthernetAppData.Values[i-1].value_180_hour;
             SML2EthernetAppData.Values[i].value_280_hour=SML2EthernetAppData.Values[i-1].value_280_hour;
-            SML2EthernetAppData.Values[i].power_total=SML2EthernetAppData.Values[i-1].power_total;
-            SML2EthernetAppData.Values[i].power_phase1=SML2EthernetAppData.Values[i-1].power_phase1;
-            SML2EthernetAppData.Values[i].power_phase2=SML2EthernetAppData.Values[i-1].power_phase2;
-            SML2EthernetAppData.Values[i].power_phase3=SML2EthernetAppData.Values[i-1].power_phase3;
-            SML2EthernetAppData.Values[i].current_phase1=SML2EthernetAppData.Values[i-1].current_phase1;
-            SML2EthernetAppData.Values[i].current_phase2=SML2EthernetAppData.Values[i-1].current_phase2;
-            SML2EthernetAppData.Values[i].current_phase3=SML2EthernetAppData.Values[i-1].current_phase3;
-            SML2EthernetAppData.Values[i].voltage_phase1=SML2EthernetAppData.Values[i-1].voltage_phase1;
-            SML2EthernetAppData.Values[i].voltage_phase2=SML2EthernetAppData.Values[i-1].voltage_phase2;
-            SML2EthernetAppData.Values[i].voltage_phase3=SML2EthernetAppData.Values[i-1].voltage_phase3;
+            SML2EthernetAppData.Values[i].power_total=SML2EthernetAppData.Values[i-1].power_total; // for graphs, but without any useful information as this is only a single spot value
+            SML2EthernetAppData.Values[i].energy_phase1=SML2EthernetAppData.Values[i-1].energy_phase1; // Energy are the integrated second-values of the power in W: so we have 3600 second-values summed-up as unit Wh
+            SML2EthernetAppData.Values[i].energy_phase2=SML2EthernetAppData.Values[i-1].energy_phase2; // Energy are the integrated second-values of the power in W: so we have 3600 second-values summed-up as unit Wh
+            SML2EthernetAppData.Values[i].energy_phase3=SML2EthernetAppData.Values[i-1].energy_phase3; // Energy are the integrated second-values of the power in W: so we have 3600 second-values summed-up as unit Wh
+            SML2EthernetAppData.Values[i].current_phase1=SML2EthernetAppData.Values[i-1].current_phase1; // for graphs, but without any useful information as this is only a single spot value
+            SML2EthernetAppData.Values[i].current_phase2=SML2EthernetAppData.Values[i-1].current_phase2; // for graphs, but without any useful information as this is only a single spot value
+            SML2EthernetAppData.Values[i].current_phase3=SML2EthernetAppData.Values[i-1].current_phase3; // for graphs, but without any useful information as this is only a single spot value
+            SML2EthernetAppData.Values[i].voltage_phase1=SML2EthernetAppData.Values[i-1].voltage_phase1; // for graphs, but without any useful information as this is only a single spot value
+            SML2EthernetAppData.Values[i].voltage_phase2=SML2EthernetAppData.Values[i-1].voltage_phase2; // for graphs, but without any useful information as this is only a single spot value
+            SML2EthernetAppData.Values[i].voltage_phase3=SML2EthernetAppData.Values[i-1].voltage_phase3; // for graphs, but without any useful information as this is only a single spot value
             SML2EthernetAppData.Values[i].temperature=SML2EthernetAppData.Values[i-1].temperature;
         }
+
+        // reset the energy-integrators for all three phases
+        SML2EthernetAppData.Values[0].energy_phase1=0.0f;
+        SML2EthernetAppData.Values[0].energy_phase2=0.0f;
+        SML2EthernetAppData.Values[0].energy_phase3=0.0f;
 
         // write current values of 1.8.0 and 2.8.0 to the value_x80_lasthour
         SML_2_Ethernet.value_180_lasthour=SML_2_Ethernet.SML2EthernetAppData.value_180;
@@ -326,17 +336,20 @@ public class SML_2_Ethernet {
                                             }else if (entry.getObjName().toString().equals("01 00 24 07 00 FF")) {
                                                 // Wirkleistung Phase L1
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML2EthernetAppData.Values[0].power_phase1=value.value.asFloat();
+                                                SML2EthernetAppData.power_phase1=value.value.asFloat();
+                                                SML2EthernetAppData.Values[0].energy_phase1+=SML2EthernetAppData.power_phase1; // integrating the power to energy
                                                 //System.out.println("P_L1: " + value.value.asString() + " " + entry.getUnit().toString());
                                             }else if (entry.getObjName().toString().equals("01 00 38 07 00 FF")) {
                                                 // Wirkleistung Phase L2
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML2EthernetAppData.Values[0].power_phase2=value.value.asFloat();
+                                                SML2EthernetAppData.power_phase2=value.value.asFloat();
+                                                SML2EthernetAppData.Values[0].energy_phase2+=SML2EthernetAppData.power_phase2; // integrating the power to energy
                                                 //System.out.println("P_L2: " + value.value.asString() + " " + entry.getUnit().toString());
                                             }else if (entry.getObjName().toString().equals("01 00 4C 07 00 FF")) {
                                                 // Wirkleistung Phase L3
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
-                                                SML2EthernetAppData.Values[0].power_phase3=value.value.asFloat();
+                                                SML2EthernetAppData.power_phase3=value.value.asFloat();
+                                                SML2EthernetAppData.Values[0].energy_phase3+=SML2EthernetAppData.power_phase3; // integrating the power to energy
                                                 //System.out.println("P_L3: " + value.value.asString() + " " + entry.getUnit().toString());
                                             }else if (entry.getObjName().toString().equals("01 00 1F 07 00 FF")) {
                                                 // Strom Phase L1
