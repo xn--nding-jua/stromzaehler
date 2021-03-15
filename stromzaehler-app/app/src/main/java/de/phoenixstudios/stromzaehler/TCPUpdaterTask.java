@@ -109,7 +109,8 @@ public abstract class TCPUpdaterTask extends AsyncTask<Void, AppData, Void>
                                 ChunkPointer = ChunkSize * (i + 1);
                             }
 
-                            ValuesArray = Compression.DecompressByteArray(ValuesArray, true);
+                            // Decompress data if desired
+                            //ValuesArray = Compression.DecompressByteArray(ValuesArray, true);
                             HelperFunctions.ReceivedElements = Integer.parseInt(String.copyValueOf(HelperFunctions.TCPCommandString.toCharArray(), HelperFunctions.TCPCommandString.indexOf("=") + 1, HelperFunctions.TCPCommandString.length() - HelperFunctions.TCPCommandString.indexOf("=") - 1));
                             if ((ValuesArray != null) && (ValuesArray.length >= (HelperFunctions.ReceivedElements * 52 + 18))) {
                                 AppData values = new AppData();

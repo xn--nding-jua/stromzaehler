@@ -520,7 +520,7 @@ public class SML_2_Ethernet {
                         switch (Answer) {
                             case "DATA":
                                 // compress the data and send GetAllTemperature-Data to client
-                                SML2EthernetAppDataArray=Compression.CompressByteArray(SML2EthernetAppDataArray, true);
+                                //SML2EthernetAppDataArray=Compression.CompressByteArray(SML2EthernetAppDataArray, true);
                                 
                                 int ChunkSize=10000; // at the moment we can transmit everything within one single chunk... maybe on larger data it is nescessary
                                 int NumberOfChunks=(int)Math.ceil((float)SML2EthernetAppDataArray.length/(float)ChunkSize);

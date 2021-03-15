@@ -12,9 +12,9 @@ public class AppData {
     public float value_280=0;
     public float value_180_day=0;
     public float value_280_day=0;
-    public float power_phase1=0.0f;
-    public float power_phase2=0.0f;
-    public float power_phase3=0.0f;
+    public float power_phase1=0;
+    public float power_phase2=0;
+    public float power_phase3=0;
 
     // 13x 4 byte = 52 byte
     public class cValues {
