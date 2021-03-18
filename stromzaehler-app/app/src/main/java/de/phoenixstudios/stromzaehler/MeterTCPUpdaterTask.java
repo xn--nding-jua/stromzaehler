@@ -314,41 +314,41 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
             // draw last value a millisecond before the current time-index
             calendar.add(Calendar.MILLISECOND, -1);
             d1 = calendar.getTime();
-            value_180.appendData(new DataPoint(d1, value.Values[i+1].value_180_hour/1000.0), false, 300);
-            value_280.appendData(new DataPoint(d1, value.Values[i+1].value_280_hour/1000.0), false, 300);
-            PowerOrEnergy1.appendData(new DataPoint(d1, value.Values[i+1].energy_phase1/1000.0), false, 300);
-            PowerOrEnergy2.appendData(new DataPoint(d1, value.Values[i+1].energy_phase2/1000.0), false, 300);
-            PowerOrEnergy3.appendData(new DataPoint(d1, value.Values[i+1].energy_phase3/1000.0), false, 300);
+            value_180.appendData(new DataPoint(d1, value.Values[i+1].value_180_hour/1000.0), false, 3000);
+            value_280.appendData(new DataPoint(d1, value.Values[i+1].value_280_hour/1000.0), false, 3000);
+            PowerOrEnergy1.appendData(new DataPoint(d1, value.Values[i+1].energy_phase1/1000.0), false, 3000);
+            PowerOrEnergy2.appendData(new DataPoint(d1, value.Values[i+1].energy_phase2/1000.0), false, 3000);
+            PowerOrEnergy3.appendData(new DataPoint(d1, value.Values[i+1].energy_phase3/1000.0), false, 3000);
 
             // now draw the current value
             calendar.add(Calendar.MILLISECOND, 1);
             d1 = calendar.getTime();
-            value_180.appendData(new DataPoint(d1, value.Values[i].value_180_hour/1000.0), false, 300);
-            value_280.appendData(new DataPoint(d1, value.Values[i].value_280_hour/1000.0), false, 300);
-            PowerOrEnergy1.appendData(new DataPoint(d1, value.Values[i].energy_phase1/1000.0), false, 300);
-            PowerOrEnergy2.appendData(new DataPoint(d1, value.Values[i].energy_phase2/1000.0), false, 300);
-            PowerOrEnergy3.appendData(new DataPoint(d1, value.Values[i].energy_phase3/1000.0), false, 300);
+            value_180.appendData(new DataPoint(d1, value.Values[i].value_180_hour/1000.0), false, 3000);
+            value_280.appendData(new DataPoint(d1, value.Values[i].value_280_hour/1000.0), false, 3000);
+            PowerOrEnergy1.appendData(new DataPoint(d1, value.Values[i].energy_phase1/1000.0), false, 3000);
+            PowerOrEnergy2.appendData(new DataPoint(d1, value.Values[i].energy_phase2/1000.0), false, 3000);
+            PowerOrEnergy3.appendData(new DataPoint(d1, value.Values[i].energy_phase3/1000.0), false, 3000);
             // alternatively show data as regular bar
             //value_180.appendData(new DataPoint(d1, value.Values[i].value_180_hour/1000.0), false, 300);
             //value_280.appendData(new DataPoint(d1, value.Values[i].value_280_hour/1000.0), false, 300);
 
             // draw all other spot-data
-            Current1.appendData(new DataPoint(d1, value.Values[i].current_phase1), false, 300);
-            Current2.appendData(new DataPoint(d1, value.Values[i].current_phase2), false, 300);
-            Current3.appendData(new DataPoint(d1, value.Values[i].current_phase3), false, 300);
-            Voltage1.appendData(new DataPoint(d1, value.Values[i].voltage_phase1/10.0), false, 300);
-            Voltage2.appendData(new DataPoint(d1, value.Values[i].voltage_phase2/10.0), false, 300);
-            Voltage3.appendData(new DataPoint(d1, value.Values[i].voltage_phase3/10.0), false, 300);
+            Current1.appendData(new DataPoint(d1, value.Values[i].current_phase1), false, 3000);
+            Current2.appendData(new DataPoint(d1, value.Values[i].current_phase2), false, 3000);
+            Current3.appendData(new DataPoint(d1, value.Values[i].current_phase3), false, 3000);
+            Voltage1.appendData(new DataPoint(d1, value.Values[i].voltage_phase1/10.0), false, 3000);
+            Voltage2.appendData(new DataPoint(d1, value.Values[i].voltage_phase2/10.0), false, 3000);
+            Voltage3.appendData(new DataPoint(d1, value.Values[i].voltage_phase3/10.0), false, 3000);
          }
 
          // draw the current points for the energies again to the next full hour in the future (as outlook)
          calendar.add(Calendar.HOUR_OF_DAY, 1);
          d1 = calendar.getTime();
-         value_180.appendData(new DataPoint(d1, value.Values[0].value_180_hour/1000.0), false, 300);
-         value_280.appendData(new DataPoint(d1, value.Values[0].value_280_hour/1000.0), false, 300);
-         PowerOrEnergy1.appendData(new DataPoint(d1, value.Values[0].energy_phase1/1000.0), false, 300);
-         PowerOrEnergy2.appendData(new DataPoint(d1, value.Values[0].energy_phase2/1000.0), false, 300);
-         PowerOrEnergy3.appendData(new DataPoint(d1, value.Values[0].energy_phase3/1000.0), false, 300);
+         value_180.appendData(new DataPoint(d1, value.Values[0].value_180_hour/1000.0), false, 3000);
+         value_280.appendData(new DataPoint(d1, value.Values[0].value_280_hour/1000.0), false, 3000);
+         PowerOrEnergy1.appendData(new DataPoint(d1, value.Values[0].energy_phase1/1000.0), false, 3000);
+         PowerOrEnergy2.appendData(new DataPoint(d1, value.Values[0].energy_phase2/1000.0), false, 3000);
+         PowerOrEnergy3.appendData(new DataPoint(d1, value.Values[0].energy_phase3/1000.0), false, 3000);
 
          SimpleDateFormat fmt_axis = new SimpleDateFormat("HH:mm\ndd.MM.");
          graph.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(activity, fmt_axis));

@@ -4,8 +4,10 @@
 
 package de.phoenixstudios.stromzaehler;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
@@ -22,6 +24,7 @@ import android.widget.TextView;
 
 import com.jjoe64.graphview.GraphView;
 
+import androidx.constraintlayout.solver.widgets.Helper;
 import de.phoenixstudios.stromzaehler.R;
 
 /**
@@ -62,6 +65,7 @@ public abstract class TCPUpdaterTask extends AsyncTask<Void, AppData, Void>
       int ChunkSize;
       int ChunkPointer;
       int NumberOfChunks;
+      int ReadBytes;
       InetAddress serverAddr=null;
 
       while(!isCancelled()) {
@@ -104,15 +108,15 @@ public abstract class TCPUpdaterTask extends AsyncTask<Void, AppData, Void>
                             NumberOfChunks = (int) Math.ceil((float) ReceiveLength / (float) ChunkSize);
                             for (int i = 0; i < NumberOfChunks; i++) {
                                 myByteBuffer = new byte[Math.min(ChunkSize, (ReceiveLength - ChunkPointer))]; // last chunk needs less space
-                                inFromServer.read(myByteBuffer, 0, myByteBuffer.length);
+                                inFromServer.readFully(myByteBuffer, 0, myByteBuffer.length);
                                 System.arraycopy(myByteBuffer, 0, ValuesArray, ChunkPointer, myByteBuffer.length);
                                 ChunkPointer = ChunkSize * (i + 1);
                             }
 
                             // Decompress data if desired
-                            //ValuesArray = Compression.DecompressByteArray(ValuesArray, true);
+                            ValuesArray = Compression.DecompressByteArray(ValuesArray, false);
                             HelperFunctions.ReceivedElements = Integer.parseInt(String.copyValueOf(HelperFunctions.TCPCommandString.toCharArray(), HelperFunctions.TCPCommandString.indexOf("=") + 1, HelperFunctions.TCPCommandString.length() - HelperFunctions.TCPCommandString.indexOf("=") - 1));
-                            if ((ValuesArray != null) && (ValuesArray.length >= (HelperFunctions.ReceivedElements * 52 + 18))) {
+                            if ((ValuesArray != null) && (ValuesArray.length >= (HelperFunctions.ReceivedElements * 52 + 30))) {
                                 AppData values = new AppData();
                                 values.fromByteBuffer(ByteBuffer.wrap(ValuesArray), HelperFunctions.ReceivedElements);
                                 publishProgress(values);
