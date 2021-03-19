@@ -96,6 +96,7 @@ public class SML_2_Ethernet {
     static public DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     public static AppData SML2EthernetAppData;
+    static PowerController myPowerController;
     public static byte[] SML2EthernetAppDataArray;
     static cConfig config;
 
@@ -105,8 +106,31 @@ public class SML_2_Ethernet {
     static float value_280_lasthour = 0.0f;
 
     public static void main(String... args) {
-        System.out.println("SML_2_Ethernet Version 1.1.0");
+        System.out.println("SML_2_Ethernet Version 1.2.0 vom 19.03.2021");
 
+        // create power-controller
+        myPowerController = new PowerController();
+
+        // load the config-file
+        LoadConfigFile();
+        
+        // create data-classes for communcation
+        SML2EthernetAppData = new AppData();
+        
+        // start timers
+        Timer timer_hour = new Timer();
+        Timer timer_second = new Timer();
+        timer_hour.schedule( new DoHourTask(), /*Delay*/0, /*Interval*/1000*60*60); // Alle 60 Minuten aufrufen
+        timer_second.schedule( new DoSecondTask(), /*Delay*/0, /*Interval*/1000); // Jede Sekunde aufrufen
+
+        // start TCP-server
+        new TCPCMDServer().start();
+        
+        // start UART-SML-Reader
+        new SMLReader().start();
+    }
+
+    static void LoadConfigFile() {
         // load configuration from XML-file
         System.out.println("Loading configuration file " + System.getProperty("user.dir") + "/settings.json" + "...");
         try{
@@ -131,16 +155,37 @@ public class SML_2_Ethernet {
             if (!jsonconfig.has("RS232Port")){jsonconfig.put("RS232Port", "/dev/ttyUSB0");}
             if (!jsonconfig.has("RS232Baudrate")){jsonconfig.put("RS232Baudrate", 9600);}
             if (!jsonconfig.has("ServerPort")){jsonconfig.put("ServerPort", 51534);}
+            if (!jsonconfig.has("Controller_DesiredPower")){jsonconfig.put("Controller_DesiredPower", -100.0);}
+            if (!jsonconfig.has("Controller_Normalization")){jsonconfig.put("Controller_Normalization", 600.0);}
+            if (!jsonconfig.has("Controller_Kp")){jsonconfig.put("Controller_Kp", 0.1);}
+            if (!jsonconfig.has("Controller_Ki")){jsonconfig.put("Controller_Ki", 0.5);}
+            if (!jsonconfig.has("Controller_Kd")){jsonconfig.put("Controller_Kd", 0.01);}
+            if (!jsonconfig.has("Controller_Ta")){jsonconfig.put("Controller_Ta", 1.0);}
+            if (!jsonconfig.has("Controller_emax")){jsonconfig.put("Controller_emax", 30.0);}
             
             // copy JSON-config to config-class
             config = new cConfig();
             config.RS232Port=jsonconfig.getString("RS232Port");
             config.RS232Baudrate=jsonconfig.getInt("RS232Baudrate");
             config.ServerPort=jsonconfig.getInt("ServerPort");
+            myPowerController.power_desired=(float)jsonconfig.getDouble("Controller_DesiredPower");
+            myPowerController.normalization=(float)jsonconfig.getDouble("Controller_Normalization");
+            myPowerController.kp=(float)jsonconfig.getDouble("Controller_Kp");
+            myPowerController.ki=(float)jsonconfig.getDouble("Controller_Ki");
+            myPowerController.kd=(float)jsonconfig.getDouble("Controller_Kd");
+            myPowerController.Ta=(float)jsonconfig.getDouble("Controller_Ta");
+            myPowerController.emax=(float)jsonconfig.getDouble("Controller_emax");
 
             System.out.println("Config: RS232-Port     = " + config.RS232Port);
             System.out.println("Config: RS232-Baudrate = " + Integer.toString(config.RS232Baudrate));
             System.out.println("Config: Server-Port    = " + Integer.toString(config.ServerPort));
+            System.out.println("Config: Ctrl_DsrdPwr   = " + Float.toString(myPowerController.power_desired));
+            System.out.println("Config: Ctrl_Norml     = " + Float.toString(myPowerController.normalization));
+            System.out.println("Config: Ctrl_Kp        = " + Float.toString(myPowerController.kp));
+            System.out.println("Config: Ctrl_Ki        = " + Float.toString(myPowerController.ki));
+            System.out.println("Config: Ctrl_Kd        = " + Float.toString(myPowerController.kd));
+            System.out.println("Config: Ctrl_Ta        = " + Float.toString(myPowerController.Ta));
+            System.out.println("Config: Ctrl_emax      = " + Float.toString(myPowerController.emax));
             
             if (CreateConfigFile){
                 // write new config to file
@@ -151,23 +196,8 @@ public class SML_2_Ethernet {
         }catch(JSONException | IOException error){
             System.out.println(error.toString());
         }
-        
-        // create data-classes for communcation
-        SML2EthernetAppData = new AppData();
-        
-        // Timer starten
-        Timer timer_hour = new Timer();
-        Timer timer_second = new Timer();
-        timer_hour.schedule( new DoHourTask(), /*Delay*/0, /*Interval*/1000*60*60); // Alle 60 Minuten aufrufen
-        timer_second.schedule( new DoSecondTask(), /*Delay*/0, /*Interval*/1000); // Jede Sekunde aufrufen
-
-        // TCP-Server starten
-        new TCPCMDServer().start();
-        
-        // SML-Reader via RS232 starten
-        new SMLReader().start();
     }
-
+    
     static void UpdateELKSensors(){
         /*
             // Available data
@@ -175,13 +205,16 @@ public class SML_2_Ethernet {
             SML2EthernetAppData.value_180_day
             SML2EthernetAppData.value_280
             SML2EthernetAppData.value_280_day
+            SML2EthernetAppData.power_phase1
+            SML2EthernetAppData.power_phase2
+            SML2EthernetAppData.power_phase3
 
             SML2EthernetAppData.Values[0].value_180_hour
             SML2EthernetAppData.Values[0].value_280_hour
             SML2EthernetAppData.Values[0].power_total
-            SML2EthernetAppData.Values[0].power_phase1
-            SML2EthernetAppData.Values[0].power_phase2
-            SML2EthernetAppData.Values[0].power_phase3
+            SML2EthernetAppData.Values[0].energy_phase1
+            SML2EthernetAppData.Values[0].energy_phase2
+            SML2EthernetAppData.Values[0].energy_phase3
             SML2EthernetAppData.Values[0].current_phase1
             SML2EthernetAppData.Values[0].current_phase2
             SML2EthernetAppData.Values[0].current_phase3
@@ -203,9 +236,12 @@ public class SML_2_Ethernet {
         /*
         HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].value_180_hour));
         HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].value_280_hour));
-        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].power_phase1));
-        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].power_phase2));
-        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].power_phase3));
+        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].energy_phase1));
+        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].energy_phase2));
+        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].energy_phase3));
+        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.power_phase1));
+        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.power_phase2));
+        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.power_phase3));
         */
     }
     
@@ -487,7 +523,6 @@ public class SML_2_Ethernet {
             int ReceiveLength;
             char[] Buffer;
             String ReceivedData;
-            String Answer;
             boolean KeepThreadAlive=true;
             
             //System.out.println("ClientThread gestartet.");
@@ -515,36 +550,89 @@ public class SML_2_Ethernet {
                         inFromClient.read(Buffer, 0, ReceiveLength);
                         ReceivedData = String.valueOf(Buffer, 0, ReceiveLength);
 
-                        Answer = ProcessTCPCMD(ReceivedData);
+                        if (ReceivedData.contains("C:DATA")) {
+                            // C:DATA=168
+                            int Elements=Integer.parseInt(String.copyValueOf(ReceivedData.toCharArray(), ReceivedData.indexOf("=")+1, ReceivedData.length()-ReceivedData.indexOf("=")-1));
+                            SML2EthernetAppDataArray = SML2EthernetAppData.toByteBuffer(Elements).array();
 
-                        switch (Answer) {
-                            case "DATA":
-                                // compress the data and send GetAllTemperature-Data to client
-                                SML2EthernetAppDataArray=Compression.CompressByteArray(SML2EthernetAppDataArray, false);
-                                
-                                int ChunkSize=10000; // at the moment we can transmit everything within one single chunk... maybe on larger data it is nescessary
-                                int NumberOfChunks=(int)Math.ceil((float)SML2EthernetAppDataArray.length/(float)ChunkSize);
-                                int ChunkPointer=0;
-                                byte[] Chunk;
+                            // compress the data and send GetAllTemperature-Data to client
+                            SML2EthernetAppDataArray=Compression.CompressByteArray(SML2EthernetAppDataArray, false);
 
-                                // Transmit in multiple chunks because temperature-data is quite huge
-                                outToClient.writeInt(SML2EthernetAppDataArray.length); // data-length
-                                outToClient.writeInt(ChunkSize); // chunksize
-                                for (int i=0; i<NumberOfChunks;i++) {
-                                    Chunk = Arrays.copyOfRange(SML2EthernetAppDataArray, ChunkPointer, Math.min((ChunkPointer+ChunkSize), SML2EthernetAppDataArray.length));
-                                    ChunkPointer=ChunkSize*(i+1);
-                                    outToClient.write(Chunk, 0, Chunk.length);
-                                }
-                                outToClient.flush();
-                                break;
-                            default:
-                                // unknown command. So send nothing
-                                // send Data to client
-                                outToClient.writeInt(0);
-                                outToClient.flush();
-                                break;
+                            int ChunkSize=10000; // at the moment we can transmit everything within one single chunk... maybe on larger data it is nescessary
+                            int NumberOfChunks=(int)Math.ceil((float)SML2EthernetAppDataArray.length/(float)ChunkSize);
+                            int ChunkPointer=0;
+                            byte[] Chunk;
+
+                            // Transmit in multiple chunks because temperature-data is quite huge
+                            outToClient.writeInt(SML2EthernetAppDataArray.length); // data-length
+                            outToClient.writeInt(ChunkSize); // chunksize
+                            for (int i=0; i<NumberOfChunks;i++) {
+                                Chunk = Arrays.copyOfRange(SML2EthernetAppDataArray, ChunkPointer, Math.min((ChunkPointer+ChunkSize), SML2EthernetAppDataArray.length));
+                                ChunkPointer=ChunkSize*(i+1);
+                                outToClient.write(Chunk, 0, Chunk.length);
+                            }
+                            outToClient.flush();
+                        }else if (ReceivedData.equals("C:PWRCTRL_CALC")) {
+                            // calculate the controller and send calculated output back to client
+                            // a conversion to DMX- or percent-values have to be done within the client
+                            outToClient.writeFloat(myPowerController.Calculate(SML2EthernetAppData.Values[0].power_total));
+                            outToClient.flush();
+                            
+                            /*
+                            This controller will control a dynamic load for an optimal use of a small PV-system
+                            so that no power will be fed into the public power-grid - if everything is working well.
+                            
+                            Connect an ohmic load to a DMX-dimmerpack or any other device that receives control-messages.
+                            
+                            The client should poll every second the calculation of the power-controller and this app
+                            will return the calculated output of the controller. This output-value will increase, if
+                            the feed-in-power is to high (power-value is below the desired value) or will decrease, if the
+                            feed-in-power is to low (power-value is above the desired-value). You have to scale it to DMX-
+                            values (0...255) or percentage (0...100) by your own within the client
+                            */
+                        }else if (ReceivedData.equals("C:PWRCTRL_RST")) {
+                            myPowerController.ResetController();
+                            outToClient.writeInt(1);
+                            outToClient.flush();
+                        }else if (ReceivedData.contains("C:PWR")) {
+                            // return the current power-value
+                            // C:PWR=0 -> total power
+                            // C:PWR=1 -> phase1
+                            // C:PWR=2 -> phase2
+                            // C:PWR=3 -> phase3
+                            int phase=Integer.parseInt(String.copyValueOf(ReceivedData.toCharArray(), ReceivedData.indexOf("=")+1, ReceivedData.length()-ReceivedData.indexOf("=")-1));
+
+                            switch (phase) {
+                                case 0:
+                                    // return last value for total power of all three phases
+                                    outToClient.writeFloat(SML2EthernetAppData.Values[0].power_total);
+                                    break;
+                                case 1:
+                                    // return last value for power in phase 1
+                                    outToClient.writeFloat(SML2EthernetAppData.power_phase1);
+                                    break;
+                                case 2:
+                                    // return last value for power in phase 2
+                                    outToClient.writeFloat(SML2EthernetAppData.power_phase2);
+                                    break;
+                                case 3:
+                                    // return last value for power in phase 3
+                                    outToClient.writeFloat(SML2EthernetAppData.power_phase3);
+                                    break;
+                            }
+                            outToClient.flush();
+                        }else if (ReceivedData.equals("C:LOADCFG")) {
+                            // this command is useful to update the PowerController-parameters without rebooting.
+                            // changes for UART and/or TCP will have no effect until a reboot of the application
+                            LoadConfigFile();
+                            outToClient.writeInt(1);
+                            outToClient.flush();
+                        }else{
+                            // Unknown Command
+                            outToClient.writeInt(0);
+                            outToClient.flush();
                         }
-
+                        
                         //System.out.println("Daten an Client gesendet.");
                     }else{
                         //System.out.println("IP="+connectionSocket.getRemoteSocketAddress().toString()+" getrennt.");
@@ -557,15 +645,4 @@ public class SML_2_Ethernet {
             }
         }
     }    
-
-    static String ProcessTCPCMD(String cmd){
-        if (cmd.contains("C:DATA")) {
-            // C:DATA=168
-            int Elements=Integer.parseInt(String.copyValueOf(cmd.toCharArray(), cmd.indexOf("=")+1, cmd.length()-cmd.indexOf("=")-1));
-            SML2EthernetAppDataArray = SML2EthernetAppData.toByteBuffer(Elements).array();
-            return "DATA";
-        }else{
-            return "Unknown command!";
-        }
-    }
 }
