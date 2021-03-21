@@ -29,6 +29,12 @@
 #include <stdlib.h> // atoi()
 #include "espDMX.h" // Schematics and more here: https://github.com/mtongnz/espDMX, https://github.com/mtongnz/espDMX/blob/master/examples/dmxChaser/dmxChaser.ino, https://www.instructables.com/ESP8266-Artnet-to-DMX/
 
+extern "C" {
+#include "user_interface.h"
+#include "wpa2_enterprise.h"
+#include "c_types.h"
+}
+
 // define the hardware-configuration
 #define LED1 5 // D1
 #define LED2 4 // D2
@@ -40,17 +46,19 @@
 Ticker TimerSeconds;
 
 // Setup the WiFi
-const char *ssid = "MYSSID";
-const char *password = "PASSWORD";
-bool WiFiAP = false;
-IPAddress ip(192,168,0,1);   
-IPAddress gateway(192,168,0,1);
-IPAddress subnet(255,255,255,0);
+bool WiFi_WPA2EAP = true; // if true -> WPA2-Enterprise, if false -> WPA2-PSK
+const char *ssid = "MyWiFi";
+const char *password = "PSK-Password";
+char wpa2eap_ssid[] = "MyWiFi";
+char wpa2eap_user[] = "Username";
+char wpa2eap_identity[] = "Username";
+char wpa2eap_password[] = "Password";
+//uint8_t target_esp_mac[6] = {0x24, 0x0a, 0xc4, 0x9a, 0x58, 0x28};
 
 // SocketCommunication to SML_2_Ethernet-Server
-const char* host = "192.168.0.55"; //IP des Java-Servers
-const int serverPort = 51534; //Port des Java-Servers (ServerSocket)
 WiFiClient client;
+const char* host = "192.168.0.33"; //IP des Java-Servers
+const int serverPort = 51534; //Port des Java-Servers (ServerSocket)
 
 // Begin of variable-definitions ----------------------------------------------------
 union uData16bit
@@ -130,30 +138,53 @@ void setup() {
 
   // Start WiFi (AP or Client)
   WiFi.disconnect();
-  if (WiFiAP) {
-    Serial.println("Configuring wifi access point...");
-    WiFi.mode(WIFI_AP);
-    WiFi.softAPConfig(ip,gateway,subnet);
-    WiFi.softAP(ssid, password); // WiFi.softAP(ssid, password, APCHAN)
-    Serial.println("AP Ready for connections");
-    Serial.print("My IP address: ");
-    Serial.println(WiFi.softAPIP());
-  } else {
-    Serial.println("Configuring wifi client-connection...");
-    WiFi.mode(WIFI_STA);
+  Serial.println("Configuring wifi client-connection...");
+  WiFi.mode(WIFI_STA);
+
+  if (WiFi_WPA2EAP){
+    Serial.println("Using WPA2-Enterprise-Mode...");
+    wifi_set_opmode(STATION_MODE);
+    struct station_config wifi_config;
+
+    memset(&wifi_config, 0, sizeof(wifi_config));
+    strcpy((char*)wifi_config.ssid, wpa2eap_ssid);
+    strcpy((char*)wifi_config.password, wpa2eap_password);
+
+    wifi_station_set_config(&wifi_config);
+    //wifi_set_macaddr(STATION_IF,target_esp_mac);
+    
+
+    wifi_station_set_wpa2_enterprise_auth(1);
+
+    // Clean up to be sure no old data is still inside
+    wifi_station_clear_cert_key();
+    wifi_station_clear_enterprise_ca_cert();
+    wifi_station_clear_enterprise_identity();
+    wifi_station_clear_enterprise_username();
+    wifi_station_clear_enterprise_password();
+    wifi_station_clear_enterprise_new_password();
+    
+    wifi_station_set_enterprise_identity((uint8*)wpa2eap_identity, strlen(wpa2eap_identity));
+    wifi_station_set_enterprise_username((uint8*)wpa2eap_user, strlen(wpa2eap_user));
+    wifi_station_set_enterprise_password((uint8*)wpa2eap_password, strlen((char*)wpa2eap_password));
+
+    wifi_station_connect();
+  }else{
+    Serial.println("Using WPA2-PSK-Mode...");
     WiFi.begin(ssid, password);
-    // Wait for connection
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-    Serial.println("WiFi connected");
-    Serial.print("My IP address: ");
-    Serial.println(WiFi.localIP());
-    Serial.print("WiFi Signal: ");
-    Serial.print(WiFi.RSSI());
-    Serial.println(" dBm");
   }
+
+  // Wait for connection
+  while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
+  }
+  Serial.println("WiFi connected");
+  Serial.print("My IP address: ");
+  Serial.println(WiFi.localIP());
+  Serial.print("WiFi Signal: ");
+  Serial.print(WiFi.RSSI());
+  Serial.println(" dBm");
 
   // Initiate the timers
   TimerSeconds.attach_ms(1000, TimerSecondsFcn);
@@ -161,15 +192,17 @@ void setup() {
 
   // Initiate DMX512 on second Serial-Port. DMXA = Serial (Standard-UART), DMXB = Serial1
   dmxB.begin(14, 255); // LED-Pin, Intensity (0...255)
+  Serial.println("DMX512 started");
 
   digitalWrite(LED1, LOW);
   digitalWrite(LED2, LOW);
+  Serial.println("Startup finished. Entering Main-Loop...");
 }
 
 void loop() {
-  Serial.printf("[Connecting to %s ... ", host);
+  Serial.printf("Connecting to %s ... ", host);
   if (client.connect(host, serverPort)) {
-    Serial.println("connected]");
+    Serial.println("connected");
     //client.setTimeout(3000);
 
     while (client.connected()) {
@@ -240,7 +273,7 @@ void loop() {
         // write calculated power-control-value to PWM-output. It will increase duty-cycle on high sun-radiation and reduce the duty-cycle on less or no radiation
         analogWrite(PWM1, myData32bit.data_f*1023); // convert to 10-bit-data 0...1023
         Serial.printf("Set PWM to %f\n", myData32bit.data_f);
-        DMXvalue=myData32bit.data_f*255;
+        DMXvalue=myData32bit.data_f*255;        
         for (int i=0; i<32; i++) {
           DMXdata[i]=DMXvalue; // convert to DMX-data 0...255
         }
@@ -251,7 +284,7 @@ void loop() {
       }
     }
   }else{
-    Serial.println("connection failed!]");
+    Serial.println("connection failed!");
     client.stop();
   }
   
