@@ -53,14 +53,14 @@ public class CurrentActivity extends Activity
    public void openStats(@SuppressWarnings("unused") final View view)
    {
       final Intent intent = new Intent(this, StatsActivity.class);
-      HelperFunctions.TCPCommandString="C:DATA=1"; // switch back to live-update
+      HelperFunctions.TCPCommandString="C:DATA=0"; // switch to live-update without history-data
       startActivity(intent);
    }
 
    public void openMeter(@SuppressWarnings("unused") final View view)
    {
       final Intent intent = new Intent(this, MeterActivity.class);
-      HelperFunctions.TCPCommandString="C:DATA=1"; // switch back to live-update
+      HelperFunctions.TCPCommandString="C:DATA=0"; // switch to live-update without history data
       startActivity(intent);
    }
 

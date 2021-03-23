@@ -2,8 +2,8 @@ package sml_2_ethernet;
 
 public class PowerController {
     // setup of the controller (will be set on startup or via TCP-command of application via config-file)
-    float power_desired=-100; // the desired power. Maybe 0W but better something around -50W to -100W to have some safe-margin
-    float normalization=600; // normalization is the installed PV-power
+    int power_desired=-100; // the desired power. Maybe 0W but better something around -50W to -100W to have some safe-margin
+    int normalization=600; // normalization is the installed PV-power
     float kp=0.1f; // proportional-value
     float ki=0.5f; // integration-value
     float kd=0.01f; // derivative-value

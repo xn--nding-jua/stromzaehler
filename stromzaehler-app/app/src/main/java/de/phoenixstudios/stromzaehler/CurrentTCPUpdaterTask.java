@@ -28,7 +28,7 @@ public class CurrentTCPUpdaterTask extends TCPUpdaterTask
    @Override
    protected void updateView(final AppData value, final Activity activity)
    {
-      final int current = Math.round(value.Values[0].power_total); // Stromzähler liefert Kommastellen mit
+      final int current = value.power;
 
       // *********************************************************************************
       // update the text-field and show/hide pictures

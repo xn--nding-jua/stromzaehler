@@ -27,14 +27,14 @@ public class StatsTCPUpdaterTask extends TCPUpdaterTask
    public StatsTCPUpdaterTask(final Activity activity)
    {
       super(activity);
-      nf1.setMinimumFractionDigits(1);
+      nf1.setMinimumFractionDigits(0);
       nf2.setMinimumFractionDigits(3);
    }
 
    @Override
    protected void updateView(final AppData value, final Activity activity)
    {
-      final double current = value.Values[0].power_total;
+      final double current = value.power;
 
       final TextView textViewCurrent = (TextView) activity.findViewById(R.id.valueCurrent);
       textViewCurrent.setText(nf1.format(current) + " W");
