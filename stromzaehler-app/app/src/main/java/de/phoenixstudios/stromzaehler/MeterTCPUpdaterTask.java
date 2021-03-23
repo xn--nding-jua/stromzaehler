@@ -157,7 +157,8 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       graph.addSeries(Voltage3);
 
       graph.getLegendRenderer().setVisible(true);
-      graph.getLegendRenderer().setAlign(LegendRenderer.LegendAlign.TOP);
+      //graph.getLegendRenderer().setAlign(LegendRenderer.LegendAlign.TOP); // Legend on the upper right site
+      graph.getLegendRenderer().setFixedPosition(0,0); // legend on the upper left side
 
 
       // set date label formatter
