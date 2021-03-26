@@ -14,6 +14,7 @@ import android.graphics.Color;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.LegendRenderer;
 import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter;
+import com.jjoe64.graphview.series.BarGraphSeries;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
@@ -38,25 +39,25 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       value_280 = new LineGraphSeries<>();
       power = new LineGraphSeries<>();
 
-      value_180.setTitle("1.8.0 (heute) [Wh]");
-      value_280.setTitle("2.8.0 (heute) [Wh]");
-      power.setTitle("Leistung [W]");
+      value_180.setTitle("1.8.0 (heute) [kWh]");
+      value_280.setTitle("2.8.0 (heute) [kWh]");
+      power.setTitle("Leistung [kW]");
 
-      value_180.setColor(Color.rgb(0,0,0));
+      value_180.setColor(Color.rgb(255,0,0));
       value_180.setDrawDataPoints(false);
       value_180.setDataPointsRadius(10);
       value_180.setThickness(8);
-      value_180.setDrawBackground(true);
-      value_180.setBackgroundColor(Color.argb(100, 0,0,0));
+      value_180.setDrawBackground(false); // has problems with negative values
+      value_180.setBackgroundColor(Color.argb(100, 255,0,0));
 
-      value_280.setColor(Color.rgb(0,128,0));
+      value_280.setColor(Color.rgb(0,192,0));
       value_280.setDrawDataPoints(false);
       value_280.setDataPointsRadius(10);
       value_280.setThickness(8);
-      value_280.setDrawBackground(true);
-      value_280.setBackgroundColor(Color.argb(100, 0,128,0));
+      value_280.setDrawBackground(false); // has problems with negative values
+      value_280.setBackgroundColor(Color.argb(100, 0,192,0));
 
-      power.setColor(Color.rgb(255,0,0));
+      power.setColor(Color.rgb(0,0,0));
       power.setDrawDataPoints(false);
       power.setDataPointsRadius(10);
       power.setThickness(8);
@@ -80,9 +81,10 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       */
       GraphView graph = (GraphView) activity.findViewById(R.id.graph);
 
+      graph.addSeries(power);
       graph.addSeries(value_180);
       graph.addSeries(value_280);
-      graph.addSeries(power);
+
 /*
       graph.getSecondScale().addSeries(Voltage1);
       graph.getSecondScale().addSeries(Voltage2);
@@ -98,8 +100,8 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       //DateFormat df = DateFormat.getDateInstance(DateFormat.SHORT);
       SimpleDateFormat fmt = new SimpleDateFormat("HH:mm:ss");
       graph.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(activity, fmt));
-      graph.getGridLabelRenderer().setNumHorizontalLabels(4); // only 4 vertical lines because of the space
-      graph.getGridLabelRenderer().setNumVerticalLabels(6); // 6 horizontal lines
+      graph.getGridLabelRenderer().setNumHorizontalLabels(6); // only 6 vertical lines because of the space
+      graph.getGridLabelRenderer().setNumVerticalLabels(8); // 8 horizontal lines
       graph.getGridLabelRenderer().setHumanRounding(true);
       //graph.getGridLabelRenderer().setVerticalAxisTitle("Leistung [W] / Energie [Wh]");
 
@@ -129,9 +131,9 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
             graph.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(activity, fmt));
             graph.getGridLabelRenderer().setNumHorizontalLabels(4); // only 4 vertical lines because of the space
 
-            value_180.resetData(new DataPoint[] {new DataPoint(d1, value.value_180_day)});
-            value_280.resetData(new DataPoint[] {new DataPoint(d1, -value.value_280_day)});
-            power.resetData(new DataPoint[] {new DataPoint(d1, value.power)});
+            value_180.resetData(new DataPoint[] {new DataPoint(d1, value.value_180_day/1000.0)});
+            value_280.resetData(new DataPoint[] {new DataPoint(d1, -value.value_280_day/1000.0)});
+            power.resetData(new DataPoint[] {new DataPoint(d1, value.power/1000.0)});
 
             double HighestYValue = Math.max(value_180.getHighestValueY(), Math.max(value_280.getHighestValueY(), power.getHighestValueY()));
             double LowestYValue = Math.min(value_180.getLowestValueY(), Math.min(value_280.getLowestValueY(), power.getLowestValueY()));
@@ -155,9 +157,9 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
             power.setDrawDataPoints(true);
             */
          } else {
-            value_180.appendData(new DataPoint(d1, value.value_180_day), false, 300); // Wh: 0...30Wh
-            value_280.appendData(new DataPoint(d1, -value.value_280_day), false, 300); // Wh: 0...30Wh
-            power.appendData(new DataPoint(d1, value.power), false, 300); // kW: 0...15kW
+            value_180.appendData(new DataPoint(d1, value.value_180_day/1000.0), false, 300); // Wh: 0...30Wh
+            value_280.appendData(new DataPoint(d1, -value.value_280_day/1000.0), false, 300); // Wh: 0...30Wh
+            power.appendData(new DataPoint(d1, value.power/1000.0), false, 300); // kW: 0...15kW
          }
 
          // scale X-axis
@@ -166,7 +168,8 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
          graph.getViewport().setMaxX(value_180.getHighestValueX());
       }else{
          // plot energies of the last 7 days (168 hours) as bar-graphs
-         Calendar calendar = Calendar.getInstance();
+         Calendar calendar = Calendar.getInstance(); // for bar-graphs to set only full hours
+         Calendar calendar2 = Calendar.getInstance(); // for power which is minutes-based
 
          // set minutes and seconds to zero, as the array will be shifted each full hour
          SimpleDateFormat fmt = new SimpleDateFormat("HH:mm:ss");
@@ -177,18 +180,25 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
          calendar.add(Calendar.SECOND, -offset_seconds);
 
          // go back the received number of elements + 1
-         calendar.add(Calendar.HOUR_OF_DAY, -value.history_value_180_hour.length+1);
+//         calendar.add(Calendar.HOUR_OF_DAY, -value.history_value_180_hour.length+1);
+//         Date d1 = calendar.getTime();
+         calendar.add(Calendar.HOUR_OF_DAY, -value.history_value_180_hour.length+1); // go back amount of data
+//         calendar.add(Calendar.MINUTE, 30); // center the bar graph in middle of hour
          Date d1 = calendar.getTime();
 
+         calendar2.add(Calendar.HOUR_OF_DAY, -value.history_value_180_hour.length);
+         calendar2.add(Calendar.SECOND, 30); // we are plotting minutes-based with mean-values, so add half of a minute
+         Date d2 = calendar2.getTime();
+
          // reset the graph
-         value_180.resetData(new DataPoint[] {new DataPoint(d1, value.history_value_180_hour[value.history_value_180_hour.length-1])});
-         value_280.resetData(new DataPoint[] {new DataPoint(d1, -value.history_value_280_hour[value.history_value_180_hour.length-1])});
+         value_180.resetData(new DataPoint[] {new DataPoint(d1, value.history_value_180_hour[value.history_value_180_hour.length-1]/1000.0)});
+         value_280.resetData(new DataPoint[] {new DataPoint(d1, -value.history_value_280_hour[value.history_value_180_hour.length-1]/1000.0)});
          if (HelperFunctions.HistoryLevel==1) {
             // we have no power-data in HistoryLevel 1
-            power.resetData(new DataPoint[]{new DataPoint(d1, 0)});
+            power.resetData(new DataPoint[]{new DataPoint(d2, 0)});
          }else{
             // we have received full history
-            power.resetData(new DataPoint[]{new DataPoint(d1, value.history_power_seconds[value.history_power_seconds.length-1])});
+            power.resetData(new DataPoint[]{new DataPoint(d2, value.history_power_seconds[value.history_power_seconds.length-1]/1000.0)});
          }
 
          for (int i=(value.history_value_180_hour.length-2); i>=0; i--) {
@@ -202,14 +212,14 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
             // draw last value a millisecond before the current time-index
             calendar.add(Calendar.MILLISECOND, -1);
             d1 = calendar.getTime();
-            value_180.appendData(new DataPoint(d1, value.history_value_180_hour[i+1]), false, 3000);
-            value_280.appendData(new DataPoint(d1, -value.history_value_280_hour[i+1]), false, 3000);
+            value_180.appendData(new DataPoint(d1, value.history_value_180_hour[i+1]/1000.0), false, 3000);
+            value_280.appendData(new DataPoint(d1, -value.history_value_280_hour[i+1]/1000.0), false, 3000);
 
             // now draw the current value
             calendar.add(Calendar.MILLISECOND, 1);
             d1 = calendar.getTime();
-            value_180.appendData(new DataPoint(d1, value.history_value_180_hour[i]), false, 3000);
-            value_280.appendData(new DataPoint(d1, -value.history_value_280_hour[i]), false, 3000);
+            value_180.appendData(new DataPoint(d1, value.history_value_180_hour[i]/1000.0), false, 3000);
+            value_280.appendData(new DataPoint(d1, -value.history_value_280_hour[i]/1000.0), false, 3000);
             // alternatively show data as regular bar
             //value_180.appendData(new DataPoint(d1, value.Values[i].value_180_hour), false, 300);
             //value_280.appendData(new DataPoint(d1, -value.Values[i].value_280_hour), false, 300);
@@ -218,8 +228,8 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
          // draw the current points for the energies again to the next full hour in the future (as outlook)
          calendar.add(Calendar.HOUR_OF_DAY, 1);
          d1 = calendar.getTime();
-         value_180.appendData(new DataPoint(d1, value.history_value_180_hour[0]), false, 3000);
-         value_280.appendData(new DataPoint(d1, -value.history_value_280_hour[0]), false, 3000);
+         value_180.appendData(new DataPoint(d1, value.history_value_180_hour[0]/1000.0), false, 3000);
+         value_280.appendData(new DataPoint(d1, -value.history_value_280_hour[0]/1000.0), false, 3000);
 
          SimpleDateFormat fmt_axis = new SimpleDateFormat("HH:mm\ndd.MM.");
          graph.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(activity, fmt_axis));
@@ -240,16 +250,15 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
          if (HelperFunctions.HistoryLevel==2) {
             // plot power of the last 7 days (second-values) as graph
 
-            // calendar is one hour before first element so we have to add 1 hour
-            calendar.add(Calendar.HOUR_OF_DAY, 1);
             int NumberOfMeanValues=60; // seconds
             //int NumberOfMeanValues=3600; // seconds
             for (int i=(value.history_power_seconds.length-1); i>=0; i-=NumberOfMeanValues) {
-               //calendar.add(Calendar.SECOND, 1); // here we would plot 604.800 elements which would overstrain many devices
-               calendar.add(Calendar.MINUTE, 1); // we are plotting only on minutes-base about 10.080 elements
-               //calendar.add(Calendar.HOUR_OF_DAY, 1); // we are plotting only on hour-base about 168 elements
                // append current data
-               d1 = calendar.getTime();
+               // go one point further in the time
+               //calendar2.add(Calendar.SECOND, 1); // here we would plot 604.800 elements which would overstrain many devices
+               calendar2.add(Calendar.MINUTE, 1); // we are plotting only on minutes-base about 10.080 elements
+               //calendar2.add(Calendar.HOUR_OF_DAY, 1); // we are plotting only on hour-base about 168 elements
+               d2 = calendar2.getTime();
 
                // calculate mean-value over x seconds
                double power_mean=0;
@@ -258,7 +267,7 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
                }
                power_mean/=(double)NumberOfMeanValues;
 
-               power.appendData(new DataPoint(d1, power_mean), false, 30000);
+               power.appendData(new DataPoint(d2, power_mean/1000.0), false, 30000);
             }
 
             HighestYValue = Math.max(HighestYValue, power.getHighestValueY());
