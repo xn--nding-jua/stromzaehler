@@ -44,7 +44,11 @@ import java.net.Socket;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.OutputStreamWriter;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -80,8 +84,9 @@ class DoSecondTask extends TimerTask
         
         // Run Tasks at full hour
         if (CurrentTime.substring(3,8).equals("00:00")) { // 34:41
-            SML_2_Ethernet.UpdateELKSensors();
-            SML_2_Ethernet.UpdateHourlyAppDataHistory();
+            SML_2_Ethernet.UpdateELKSensors(); // upload data to ELK
+            SML_2_Ethernet.UpdateHourlyAppDataHistory(); // shift history-data by 1 hour
+            SML_2_Ethernet.SaveHistoryData(SML_2_Ethernet.SML2EthernetAppData); // save history to file so that we are loosing only 1 hour on reboot
         }
     }
 }
@@ -115,7 +120,7 @@ public class SML_2_Ethernet {
         LoadConfigFile();
         
         // create data-classes for communcation
-        SML2EthernetAppData = new AppData();
+        SML2EthernetAppData = LoadOrCreateHistoryData();
         
         // start timers
         Timer timer_hour = new Timer();
@@ -155,13 +160,14 @@ public class SML_2_Ethernet {
             if (!jsonconfig.has("RS232Port")){jsonconfig.put("RS232Port", "/dev/ttyUSB0");}
             if (!jsonconfig.has("RS232Baudrate")){jsonconfig.put("RS232Baudrate", 9600);}
             if (!jsonconfig.has("ServerPort")){jsonconfig.put("ServerPort", 51534);}
-            if (!jsonconfig.has("Controller_DesiredPower")){jsonconfig.put("Controller_DesiredPower", -100.0);}
+            if (!jsonconfig.has("Controller_DesiredPower")){jsonconfig.put("Controller_DesiredPower", -50.0);}
             if (!jsonconfig.has("Controller_Normalization")){jsonconfig.put("Controller_Normalization", 600.0);}
-            if (!jsonconfig.has("Controller_Kp")){jsonconfig.put("Controller_Kp", 0.1);}
-            if (!jsonconfig.has("Controller_Ki")){jsonconfig.put("Controller_Ki", 0.5);}
-            if (!jsonconfig.has("Controller_Kd")){jsonconfig.put("Controller_Kd", 0.01);}
+            if (!jsonconfig.has("Controller_Kp")){jsonconfig.put("Controller_Kp", 0.15);}
+            if (!jsonconfig.has("Controller_Ki")){jsonconfig.put("Controller_Ki", 0.1);}
+            if (!jsonconfig.has("Controller_Kd")){jsonconfig.put("Controller_Kd", 0.05);}
             if (!jsonconfig.has("Controller_Ta")){jsonconfig.put("Controller_Ta", 1.0);}
-            if (!jsonconfig.has("Controller_emax")){jsonconfig.put("Controller_emax", 30.0);}
+            if (!jsonconfig.has("Controller_emax")){jsonconfig.put("Controller_emax", 2.0);}
+            if (!jsonconfig.has("Controller_emin")){jsonconfig.put("Controller_emin", 0.0);}
             
             // copy JSON-config to config-class
             config = new cConfig();
@@ -175,6 +181,7 @@ public class SML_2_Ethernet {
             myPowerController.kd=(float)jsonconfig.getDouble("Controller_Kd");
             myPowerController.Ta=(float)jsonconfig.getDouble("Controller_Ta");
             myPowerController.emax=(float)jsonconfig.getDouble("Controller_emax");
+            myPowerController.emin=(float)jsonconfig.getDouble("Controller_emin");
 
             System.out.println("Config: RS232-Port     = " + config.RS232Port);
             System.out.println("Config: RS232-Baudrate = " + Integer.toString(config.RS232Baudrate));
@@ -185,7 +192,7 @@ public class SML_2_Ethernet {
             System.out.println("Config: Ctrl_Ki        = " + Float.toString(myPowerController.ki));
             System.out.println("Config: Ctrl_Kd        = " + Float.toString(myPowerController.kd));
             System.out.println("Config: Ctrl_Ta        = " + Float.toString(myPowerController.Ta));
-            System.out.println("Config: Ctrl_emax      = " + Float.toString(myPowerController.emax));
+            System.out.println("Config: Ctrl_emax/emin = " + Float.toString(myPowerController.emax) + "/" + Float.toString(myPowerController.emin));
             
             if (CreateConfigFile){
                 // write new config to file
@@ -196,6 +203,52 @@ public class SML_2_Ethernet {
         }catch(JSONException | IOException error){
             System.out.println(error.toString());
         }
+    }
+    
+    static void SaveHistoryData(AppData History) {
+        byte[] HistoryArray = History.toByteBuffer(2).array();
+        // compress the data
+        HistoryArray=Compression.CompressByteArray(HistoryArray, false);
+
+        try (FileOutputStream fos = new FileOutputStream(System.getProperty("user.dir") + "/history.gz")) {
+           fos.write(HistoryArray);
+           //fos.close(); There is no more need for this line since you had created the instance of "fos" inside the try. And this will automatically close the OutputStream
+        }catch(IOException error){
+            System.out.println(error.toString());
+        }
+    }
+    
+    static AppData LoadOrCreateHistoryData() {
+        // load history from GZIP-file
+        System.out.print("Try to load history file " + System.getProperty("user.dir") + "/history.gz" + "...");
+
+        AppData History = new AppData();
+
+        try{
+            File historyfile = new File(System.getProperty("user.dir") + "/history.gz");
+            if (historyfile.exists()){
+                byte[] HistoryArray;
+
+                try (FileInputStream fis = new FileInputStream(historyfile)) {
+                   HistoryArray = new byte[fis.available()];
+                   fis.read(HistoryArray);
+                   //fos.close(); There is no more need for this line since you had created the instance of "fos" inside the try. And this will automatically close the OutputStream
+                }
+                System.out.print("Read " + HistoryArray.length/1024 + "kB...");
+                
+                HistoryArray=Compression.DecompressByteArray(HistoryArray, false);
+                System.out.print("Decompressed " + HistoryArray.length/1024/1024 + "MB...");
+
+                History.fromByteBuffer(ByteBuffer.wrap(HistoryArray), 2);
+                System.out.println(" Done.");
+            }else{
+                System.out.println(" No history-file found.");
+            }
+        }catch(IOException error){
+            System.out.println(error.toString());
+        }
+        
+        return History;
     }
     
     static void UpdateELKSensors(){
@@ -214,17 +267,9 @@ public class SML_2_Ethernet {
         
         */
 
-        // TODO: Upload data to ELK
-        /*
-        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].value_180_hour));
-        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].value_280_hour));
-        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].energy_phase1));
-        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].energy_phase2));
-        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.Values[0].energy_phase3));
-        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.power_phase1));
-        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.power_phase2));
-        HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=TYPBEZEICHNUNG&id=NAME&value="+Float.toString(SML2EthernetAppData.power_phase3));
-        */
+        // Upload energy-data of the last hour to ELK
+        //HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=power&id=k4-meter-180&value="+Integer.toString(SML2EthernetAppData.history_value_180_hour[0]));
+        //HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=power&id=k4-meter-280&value="+Integer.toString(SML2EthernetAppData.history_value_280_hour[0]));
     }
     
     static void UpdateHourlyAppDataHistory(){
@@ -350,7 +395,12 @@ public class SML_2_Ethernet {
                                                 // momentane Gesamtwirkleistung
                                                 HelperFunctions.ValueContainer value = HelperFunctions.extractValueOf(entry);
                                                 SML2EthernetAppData.power=value.value.asInt();
+                                                
+                                                // update internal history
                                                 UpdateAppDataPowerHistory(SML2EthernetAppData.power);
+                                                
+                                                // calculate the power-controller e.g. for the ESP8266 WiFi-PV-Load-device
+                                                myPowerController.Calculate(SML2EthernetAppData.power);
                                                 //System.out.println("Mom. Ges.P: " + value.value.asString() + " " + entry.getUnit().toString());
                                             }else if (entry.getObjName().toString().equals("01 00 24 07 00 FF")) {
                                                 // Wirkleistung Phase L1
@@ -510,8 +560,6 @@ public class SML_2_Ethernet {
 
         @Override
         public void run() {
-            int ReceiveLength;
-            char[] Buffer;
             String ReceivedData;
             boolean KeepThreadAlive=true;
             
@@ -522,6 +570,7 @@ public class SML_2_Ethernet {
                 // mit offenem Socket verbinden
                 BufferedReader inFromClient = new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
                 ObjectOutputStream outToClient = new ObjectOutputStream(connectionSocket.getOutputStream());
+                BufferedWriter outToClient2 = new BufferedWriter(new OutputStreamWriter(connectionSocket.getOutputStream()));
 
                 // Meldung im Systemlog
                 //System.out.println("IP="+connectionSocket.getRemoteSocketAddress().toString()+" verbunden.");
@@ -530,15 +579,11 @@ public class SML_2_Ethernet {
                 while(KeepThreadAlive)
                 {
                     // Daten empfangen
-                    ReceiveLength=inFromClient.read(); // Programm wartet hier, bis neue Daten eingehen (max. 30 Sekunden)
+                    ReceivedData=inFromClient.readLine(); // Programm wartet hier, bis neue Daten eingehen (max. 30 Sekunden)
 
-                    if (ReceiveLength>0)
+                    if ((ReceivedData!=null) && (ReceivedData.length()>0))
                     {
                         //System.out.println("Daten von Client empfangen.");
-
-                        Buffer = new char[ReceiveLength];
-                        inFromClient.read(Buffer, 0, ReceiveLength);
-                        ReceivedData = String.valueOf(Buffer, 0, ReceiveLength);
 
                         if (ReceivedData.contains("C:DATA")) {
                             // C:DATA=0, C:DATA=1, C:DATA=2
@@ -560,11 +605,11 @@ public class SML_2_Ethernet {
                                 outToClient.write(Chunk, 0, Chunk.length);
                             }
                             outToClient.flush();
-                        }else if (ReceivedData.equals("C:PWRCTRL_CALC")) {
-                            // calculate the controller and send calculated output back to client
+                        }else if (ReceivedData.equals("C:POWERCONTROLLER?")) {
+                            // send calculated output of controller back to client
                             // a conversion to DMX- or percent-values have to be done within the client
-                            outToClient.writeFloat(myPowerController.Calculate(SML2EthernetAppData.power));
-                            outToClient.flush();
+                            outToClient2.write(Float.toString(myPowerController.GetOutput()) + "\n");
+                            outToClient2.flush();
                             
                             /*
                             This controller will control a dynamic load for an optimal use of a small PV-system
@@ -578,24 +623,24 @@ public class SML_2_Ethernet {
                             feed-in-power is to low (power-value is above the desired-value). You have to scale it to DMX-
                             values (0...255) or percentage (0...100) by your own within the client
                             */
-                        }else if (ReceivedData.equals("C:PWRCTRL_RST")) {
+                        }else if (ReceivedData.equals("C:POWERCONTROLLER>RESET")) {
                             myPowerController.ResetController();
-                            outToClient.writeInt(1);
-                            outToClient.flush();
-                        }else if (ReceivedData.equals("C:PWR")) {
+                            outToClient2.write("OK\n");
+                            outToClient2.flush();
+                        }else if (ReceivedData.equals("C:POWER?")) {
                             // return the current power-value
-                            outToClient.writeInt(SML2EthernetAppData.power);
-                            outToClient.flush();
-                        }else if (ReceivedData.equals("C:LOADCFG")) {
+                            outToClient2.write(Integer.toString(SML2EthernetAppData.power) + "\n");
+                            outToClient2.flush();
+                        }else if (ReceivedData.equals("C:RELOADCONFIG")) {
                             // this command is useful to update the PowerController-parameters without rebooting.
                             // changes for UART and/or TCP will have no effect until a reboot of the application
                             LoadConfigFile();
-                            outToClient.writeInt(1);
-                            outToClient.flush();
+                            outToClient2.write("OK\n");
+                            outToClient2.flush();
                         }else{
                             // Unknown Command
-                            outToClient.writeInt(0);
-                            outToClient.flush();
+                            outToClient2.write("?\n");
+                            outToClient2.flush();
                         }
                         
                         //System.out.println("Daten an Client gesendet.");
