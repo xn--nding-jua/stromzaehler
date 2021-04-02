@@ -44,6 +44,7 @@ extern "C" {
 
 // define Tickers
 Ticker TimerSeconds;
+Ticker Timer500ms;
 
 // Setup the WiFi
 bool WiFi_WPA2EAP = true; // if true -> WPA2-Enterprise, if false -> WPA2-PSK
@@ -57,7 +58,7 @@ char wpa2eap_password[] = "Password";
 
 // SocketCommunication to SML_2_Ethernet-Server
 WiFiClient client;
-const char* host = "192.168.0.33"; //IP des Java-Servers
+const char* host = "192.168.0.XXX"; //IP des Java-Servers
 const int serverPort = 51534; //Port des Java-Servers (ServerSocket)
 
 // Begin of variable-definitions ----------------------------------------------------
@@ -84,7 +85,7 @@ uData32bit myData32bit;
 
 int i_var;
 uint8_t b_var;
-boolean SecTick=false;
+bool ProcessController=false;
 uint8_t DMXvalue=0;
 uint8_t DMXdata[32];
 
@@ -111,12 +112,17 @@ int endianSwap4int(int a) {
 void TimerSecondsFcn() {
   // toggle Status-LED
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+}
 
-  SecTick=true;
+void Timer500msFcn() {
+  ProcessController=true;
 }
 
 // setup-function called before loop()
 void setup() {
+  // disable watchdog
+  //wdt_disable();
+  
   // setup hardware-pins
   pinMode(LED_BUILTIN, OUTPUT);     // Initialize the LED_BUILTIN pin as an output
   pinMode(LED1, OUTPUT);
@@ -134,15 +140,32 @@ void setup() {
   delay(1000);
 
   Serial.begin(115200);
-  Serial.println();
+  Serial.println("Welcome to the WiFi-PV-Load v1.0");
+  Serial.println("(c) 2021 Dr.-Ing. Christian Nöding");
 
+  // Initiate the timers
+  Serial.print("Starting timer...");
+  TimerSeconds.attach_ms(1000, TimerSecondsFcn);
+  Timer500ms.attach_ms(500, Timer500msFcn);
+  Serial.println("OK");
+
+  // Initiate DMX512 on second Serial-Port. DMXA = Serial (Standard-UART), DMXB = Serial1
+  Serial.print("Starting DMX512...");
+  dmxB.begin(14, 255); // LED-Pin, Intensity (0...255)
+  Serial.println("OK");
+
+  digitalWrite(LED1, LOW);
+  digitalWrite(LED2, LOW);
+}
+
+void Wifi_connect() {
   // Start WiFi (AP or Client)
   WiFi.disconnect();
-  Serial.println("Configuring wifi client-connection...");
+  Serial.print("Connecting WiFi ");
   WiFi.mode(WIFI_STA);
 
   if (WiFi_WPA2EAP){
-    Serial.println("Using WPA2-Enterprise-Mode...");
+    Serial.print("using WPA2-Enterprise-Mode...");
     wifi_set_opmode(STATION_MODE);
     struct station_config wifi_config;
 
@@ -170,7 +193,7 @@ void setup() {
 
     wifi_station_connect();
   }else{
-    Serial.println("Using WPA2-PSK-Mode...");
+    Serial.print("using WPA2-PSK-Mode...");
     WiFi.begin(ssid, password);
   }
 
@@ -180,34 +203,26 @@ void setup() {
       Serial.print(".");
   }
   Serial.println("WiFi connected");
-  Serial.print("My IP address: ");
+  Serial.print("IP address is ");
   Serial.println(WiFi.localIP());
   Serial.print("WiFi Signal: ");
   Serial.print(WiFi.RSSI());
   Serial.println(" dBm");
-
-  // Initiate the timers
-  TimerSeconds.attach_ms(1000, TimerSecondsFcn);
-  Serial.println("Timer started");
-
-  // Initiate DMX512 on second Serial-Port. DMXA = Serial (Standard-UART), DMXB = Serial1
-  dmxB.begin(14, 255); // LED-Pin, Intensity (0...255)
-  Serial.println("DMX512 started");
-
-  digitalWrite(LED1, LOW);
-  digitalWrite(LED2, LOW);
-  Serial.println("Startup finished. Entering Main-Loop...");
 }
 
 void loop() {
-  Serial.printf("Connecting to %s ... ", host);
+  if (WiFi.status() != WL_CONNECTED) {
+    Wifi_connect(); // (re)connect to WiFi
+  }
+  
+  Serial.printf("Connecting to SML_2_Ethernet-Server at %s ... ", host);
   if (client.connect(host, serverPort)) {
     Serial.println("connected");
     //client.setTimeout(3000);
 
     while (client.connected()) {
-      if (SecTick) {
-        SecTick=false;
+      if (ProcessController) {
+        ProcessController=false;
 
         // clear receive-buffer
         for (int i=0; i<client.available(); i++) {
@@ -215,69 +230,32 @@ void loop() {
         }
 
         // write command to server
-        //myData32bit.data_i32 = endianSwap4int(14); // number of UTF8-chars (16-bit per char!)
-        //client.write(myData32bit.data_u8, 4); // we swapped the bytes before, so we can transmit all 4 bytes which are big-endian now
-        client.write(14); // send number of following chars
-        client.print("C:PWRCTRL_CALC"); // send command
+        client.println("C:POWERCONTROLLER?"); // send command
 
-        /*
-          // statt mit union kann man auch pointer nehmen
-          float temp_float;
-          int *temp_float;
-          temp_float = 14.3;
-          *temp_float = &temp_float;
-          client.write(*temp_float, 4);
-        
-          // oder so:
-          float f1 = 14.3;
-          byte* fb = (byte*) &f1;
-        
-          Serial.println(fb[0]);    // Take a look at the bytes
-          Serial.println(fb[1]);
-          Serial.println(fb[2]);
-          Serial.println(fb[3]);
-        */
-    
         // read the answer from server
-        //int = client.read()
-        //int = client.read(uint8_t* buf, size_t size)
-        //int = client.read(char* buf, size_t size)
-
-        // wait for data
-        delay(500);
-        while (client.available()<4) {
-          delay(10);
-        }
-        // if we received more than expected, ignore some of the bytes
-        if (client.available()>4){
-          for (int i=0; i<client.available()-3; i++) {
-            client.read();
-          }
-        }        
-        int ReadBytes = client.read(myData32bit.data_u8, 4);
-        myData32bit.data_i32 = endianSwap4int(myData32bit.data_i32);
-        Serial.printf("Received new Data = %f -> ", myData32bit.data_f);
+        String AnswerFromServer = client.readStringUntil('\n');
+        float ControllerOutput = AnswerFromServer.toFloat();
+        Serial.printf("Received new Data = %f -> ", ControllerOutput);
         
         // do something with the result
     
         // limit the value between 0 and 1
-        if (myData32bit.data_f<0) {
-          myData32bit.data_f=0;
-        }else if (myData32bit.data_f>1000000) {
-          // illegal number -> set PWM to 0%
-          myData32bit.data_f=0;
-        }else if (myData32bit.data_f>1) {
-          myData32bit.data_f=1;
+        if ((ControllerOutput<0) || (ControllerOutput>1000000)) {
+          // below 0 can be cropped and values above 1000000 are errors
+          ControllerOutput=0;
+        }else if (ControllerOutput>1) {
+          // crop to 1 at the positive end
+          ControllerOutput=1;
         }
         
         // write calculated power-control-value to PWM-output. It will increase duty-cycle on high sun-radiation and reduce the duty-cycle on less or no radiation
-        analogWrite(PWM1, myData32bit.data_f*1023); // convert to 10-bit-data 0...1023
-        Serial.printf("Set PWM to %f\n", myData32bit.data_f);
-        DMXvalue=myData32bit.data_f*255;        
+        analogWrite(PWM1, ControllerOutput*1023); // convert to 10-bit-data 0...1023
+        DMXvalue=ControllerOutput*255;        
         for (int i=0; i<32; i++) {
           DMXdata[i]=DMXvalue; // convert to DMX-data 0...255
         }
         dmxB.setChans(DMXdata, 32, 1); // output 32-bytes starting from channel 1
+        Serial.printf("Set PWM=%.3f%% and DMX=%u\n", ControllerOutput*100.0, DMXvalue);
       }else{
         // wait for the next second        
         delay(1);
