@@ -85,10 +85,13 @@ public abstract class TCPUpdaterTask extends AsyncTask<Void, AppData, Void>
 
             // send command to server if command is available
             if (HelperFunctions.TCPCommandString.length()>0) {
-                outToServer.write(HelperFunctions.TCPCommandString.length());
-                myCharBuffer = HelperFunctions.TCPCommandString.toCharArray();
-                outToServer.write(myCharBuffer, 0, HelperFunctions.TCPCommandString.length());
+                outToServer.write(HelperFunctions.TCPCommandString + "\n");
                 outToServer.flush(); // force flushing the buffer to send immediatly
+
+                // at the moment this app is only requesting the command C:DATA=0, ..., C:DATA=2
+                // the SML_2_Ethernet-Java-Server will then reply binary-data instead of strings
+                // so we have to read Integers and Byte-arrays
+                // if you want to receive other data, you have to parse the returned strings
 
                 // wait for response and read data
                 if (inFromServer != null) {
