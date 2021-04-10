@@ -84,9 +84,19 @@ class DoSecondTask extends TimerTask
         
         // Run Tasks at full hour
         if (CurrentTime.substring(3,8).equals("00:00")) { // 34:41
-            SML_2_Ethernet.UpdateELKSensors(); // upload data to ELK
-            SML_2_Ethernet.UpdateHourlyAppDataHistory(); // shift history-data by 1 hour
-            SML_2_Ethernet.SaveHistoryData(SML_2_Ethernet.SML2EthernetAppData); // save history to file so that we are loosing only 1 hour on reboot
+            int energy_180_lasthour = SML_2_Ethernet.SML2EthernetAppData.history_value_180_hour[0];
+            int energy_280_lasthour = SML_2_Ethernet.SML2EthernetAppData.history_value_280_hour[0];
+            
+            // add the values of last hour for 180 and 280 to longhistory and save it to file
+            SML_2_Ethernet.SML2EthernetLongHistory.add(energy_180_lasthour, energy_280_lasthour);
+            SML_2_Ethernet.SaveLongHistoryData(SML_2_Ethernet.SML2EthernetLongHistory, System.getProperty("user.dir") + "/longhistory.gz");
+            
+            // upload data to ELK
+            SML_2_Ethernet.UpdateELKSensors(energy_180_lasthour, energy_280_lasthour);
+
+            // shift history-data by 1 hour, set value_x80_lasthour to current value and save ring-buffer to file
+            SML_2_Ethernet.UpdateHourlyAppDataHistory();
+            SML_2_Ethernet.SaveHistoryData(SML_2_Ethernet.SML2EthernetAppData, System.getProperty("user.dir") + "/history.gz"); // save history to file so that we are loosing only 1 hour on reboot
         }
     }
 }
@@ -101,8 +111,8 @@ public class SML_2_Ethernet {
     static public DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     public static AppData SML2EthernetAppData;
+    public static LongHistory SML2EthernetLongHistory;
     static PowerController myPowerController;
-    public static byte[] SML2EthernetAppDataArray;
     static cConfig config;
 
     static int value_180_yesterday = 0;
@@ -111,16 +121,17 @@ public class SML_2_Ethernet {
     static int value_280_lasthour = 0;
 
     public static void main(String... args) {
-        System.out.println("SML_2_Ethernet Version 1.3.0 vom 23.03.2021");
+        System.out.println("SML_2_Ethernet Version 1.4.0 vom 10.04.2021");
 
         // create power-controller
         myPowerController = new PowerController();
-
+        
         // load the config-file
         LoadConfigFile();
         
         // create data-classes for communcation
-        SML2EthernetAppData = LoadOrCreateHistoryData();
+        SML2EthernetAppData = LoadOrCreateHistoryData(System.getProperty("user.dir") + "/history.gz");
+        SML2EthernetLongHistory = LoadOrCreateLongHistoryData(System.getProperty("user.dir") + "/longhistory.gz");
         
         // start timers
         Timer timer_hour = new Timer();
@@ -205,12 +216,12 @@ public class SML_2_Ethernet {
         }
     }
     
-    static void SaveHistoryData(AppData History) {
-        byte[] HistoryArray = History.toByteBuffer(2).array();
+    static void SaveHistoryData(AppData History, String Filename) {
+        byte[] HistoryArray = History.toByteBuffer(2, null).array(); // on HistoryLevel=2 we do not need to give LongHistory as parameter
         // compress the data
         HistoryArray=Compression.CompressByteArray(HistoryArray, false);
 
-        try (FileOutputStream fos = new FileOutputStream(System.getProperty("user.dir") + "/history.gz")) {
+        try (FileOutputStream fos = new FileOutputStream(Filename)) {
            fos.write(HistoryArray);
            //fos.close(); There is no more need for this line since you had created the instance of "fos" inside the try. And this will automatically close the OutputStream
         }catch(IOException error){
@@ -218,14 +229,14 @@ public class SML_2_Ethernet {
         }
     }
     
-    static AppData LoadOrCreateHistoryData() {
+    static AppData LoadOrCreateHistoryData(String Filename) {
         // load history from GZIP-file
-        System.out.print("Try to load history file " + System.getProperty("user.dir") + "/history.gz" + "...");
+        System.out.print("Try to load history file " + Filename + "...");
 
         AppData History = new AppData();
 
         try{
-            File historyfile = new File(System.getProperty("user.dir") + "/history.gz");
+            File historyfile = new File(Filename);
             if (historyfile.exists()){
                 byte[] HistoryArray;
 
@@ -239,7 +250,7 @@ public class SML_2_Ethernet {
                 HistoryArray=Compression.DecompressByteArray(HistoryArray, false);
                 System.out.print("Decompressed " + HistoryArray.length/1024/1024 + "MB...");
 
-                History.fromByteBuffer(ByteBuffer.wrap(HistoryArray), 2);
+                History.fromByteBuffer(ByteBuffer.wrap(HistoryArray), 2, null); // on HistoryLevel=2 we do not need to give LongHistory as parameter
                 System.out.println(" Done.");
             }else{
                 System.out.println(" No history-file found.");
@@ -250,26 +261,54 @@ public class SML_2_Ethernet {
         
         return History;
     }
+
+    static void SaveLongHistoryData(LongHistory History, String Filename){
+        byte[] LongHistoryArray = History.toByteBuffer().array();
+        // compress the data
+        LongHistoryArray=Compression.CompressByteArray(LongHistoryArray, false);
+
+        try (FileOutputStream fos = new FileOutputStream(Filename)) {
+           fos.write(LongHistoryArray);
+           //fos.close(); There is no more need for this line since you had created the instance of "fos" inside the try. And this will automatically close the OutputStream
+        }catch(IOException error){
+            System.out.println(error.toString());
+        }
+    }
     
-    static void UpdateELKSensors(){
-        /*
-            // Available data
-            SML2EthernetAppData.value_180
-            SML2EthernetAppData.value_180_day
-            SML2EthernetAppData.value_280
-            SML2EthernetAppData.value_280_day
-            SML2EthernetAppData.power
+    static LongHistory LoadOrCreateLongHistoryData(String Filename){
+        // load history from GZIP-file
+        System.out.print("Try to load long-history file " + Filename + "...");
 
-            // Available history-data
-            SML2EthernetAppData.history_value_180_hour[168] // values for the last 7 days
-            SML2EthernetAppData.history_value_280_hour[168] // values for the last 7 days
-            SML2EthernetAppData.history_power_seconds[604800] // values for the last 7 days = 168h * 60min * 60s = 604800
+        LongHistory History = new LongHistory();
+        try{
+            File longhistoryfile = new File(Filename);
+            if (longhistoryfile.exists()){
+                byte[] HistoryArray;
+
+                try (FileInputStream fis = new FileInputStream(longhistoryfile)) {
+                   HistoryArray = new byte[fis.available()];
+                   fis.read(HistoryArray);
+                   //fos.close(); There is no more need for this line since you had created the instance of "fos" inside the try. And this will automatically close the OutputStream
+                }
+                System.out.print("Read " + HistoryArray.length/1024 + "kB...");
+                HistoryArray=Compression.DecompressByteArray(HistoryArray, false);
+                System.out.print("Decompressed " + HistoryArray.length/1024/1024 + "MB...");
+                History.fromByteBuffer(ByteBuffer.wrap(HistoryArray));
+                System.out.println(" Done.");
+            }else{
+                System.out.println(" No long-history-file found.");
+            }
+        }catch(IOException error){
+            System.out.println(error.toString());
+        }
         
-        */
-
+        return History;
+    }
+    
+    static void UpdateELKSensors(int value_180, int value_280){
         // Upload energy-data of the last hour to ELK
-        //HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=power&id=k4-meter-180&value="+Integer.toString(SML2EthernetAppData.history_value_180_hour[0]));
-        //HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=power&id=k4-meter-280&value="+Integer.toString(SML2EthernetAppData.history_value_280_hour[0]));
+        //HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=power&id=k4-meter-180&value="+Integer.toString(value_180));
+        //HelperFunctions.CallHttp("http://192.168.0.24/post_sensor_data.php?index=power&id=k4-meter-280&value="+Integer.toString(value_280));
     }
     
     static void UpdateHourlyAppDataHistory(){
@@ -284,8 +323,8 @@ public class SML_2_Ethernet {
         // history_power_seconds will be shifted within UpdateAppDataPowerHistory
         
         // write current values of 1.8.0 and 2.8.0 to the value_x80_lasthour
-        SML_2_Ethernet.value_180_lasthour=SML_2_Ethernet.SML2EthernetAppData.value_180;
-        SML_2_Ethernet.value_280_lasthour=SML_2_Ethernet.SML2EthernetAppData.value_280;
+        value_180_lasthour=SML2EthernetAppData.value_180;
+        value_280_lasthour=SML2EthernetAppData.value_280;
     }
 
     static void UpdateAppDataPowerHistory(int Power){
@@ -586,21 +625,22 @@ public class SML_2_Ethernet {
                         //System.out.println("Daten von Client empfangen.");
 
                         if (ReceivedData.contains("C:DATA")) {
-                            // C:DATA=0, C:DATA=1, C:DATA=2
+                            // C:DATA=0, C:DATA=1, C:DATA=2, C:DATA=3
                             int HistoryLevel = Integer.parseInt(String.copyValueOf(ReceivedData.toCharArray(), ReceivedData.indexOf("=")+1, ReceivedData.length()-ReceivedData.indexOf("=")-1));
-                            SML2EthernetAppDataArray = SML2EthernetAppData.toByteBuffer(HistoryLevel).array();
+
+                            byte[] AppDataArray = SML2EthernetAppData.toByteBuffer(HistoryLevel, SML2EthernetLongHistory).array();
                             // compress the data and send GetAllTemperature-Data to client
-                            SML2EthernetAppDataArray=Compression.CompressByteArray(SML2EthernetAppDataArray, false);
+                            AppDataArray=Compression.CompressByteArray(AppDataArray, false);
 
                             int ChunkSize=250000; // at the moment we can transmit everything within one single chunk... maybe on larger data it is nescessary
-                            int NumberOfChunks=(int)Math.ceil((float)SML2EthernetAppDataArray.length/(float)ChunkSize);
+                            int NumberOfChunks=(int)Math.ceil((float)AppDataArray.length/(float)ChunkSize);
                             int ChunkPointer=0;
                             byte[] Chunk;
                             // Transmit in multiple chunks because temperature-data is quite huge
-                            outToClient.writeInt(SML2EthernetAppDataArray.length); // data-length
+                            outToClient.writeInt(AppDataArray.length); // data-length
                             outToClient.writeInt(ChunkSize); // chunksize
                             for (int i=0; i<NumberOfChunks;i++) {
-                                Chunk = Arrays.copyOfRange(SML2EthernetAppDataArray, ChunkPointer, Math.min((ChunkPointer+ChunkSize), SML2EthernetAppDataArray.length));
+                                Chunk = Arrays.copyOfRange(AppDataArray, ChunkPointer, Math.min((ChunkPointer+ChunkSize), AppDataArray.length));
                                 ChunkPointer=ChunkSize*(i+1);
                                 outToClient.write(Chunk, 0, Chunk.length);
                             }
