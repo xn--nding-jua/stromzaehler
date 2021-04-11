@@ -39,8 +39,8 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       value_280 = new LineGraphSeries<>();
       power = new LineGraphSeries<>();
 
-      value_180.setTitle("1.8.0 (heute) [kWh]");
-      value_280.setTitle("2.8.0 (heute) [kWh]");
+      value_180.setTitle("1.8.0 [kWh]");
+      value_280.setTitle("2.8.0 [kWh]");
       power.setTitle("Leistung [kW]");
 
       value_180.setColor(Color.rgb(255,0,0));
@@ -321,6 +321,7 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
          // reset the graph and plot first element at 00:00:00
          Date d1 = calendar.getTime();
          DayValue = value.longHistory.get(calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.MONTH)+1, calendar.get(Calendar.YEAR));
+         power.resetData(new DataPoint[]{new DataPoint(d1, 0)});
          value_180.resetData(new DataPoint[] {new DataPoint(d1, DayValue.value_180/1000.0)});
          value_280.resetData(new DataPoint[] {new DataPoint(d1, -DayValue.value_280/1000.0)});
 

@@ -48,7 +48,21 @@
         android:background="@drawable/button"
         android:contentDescription="History"
         android:onClick="historyMeter"
-        android:src="@mipmap/bt_meter" />
+        android:src="@mipmap/bt_meter_history7" />
+
+    <ImageButton
+        android:id="@+id/buttonLongHistory"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_toLeftOf="@+id/buttonHistory"
+        android:layout_marginBottom="8dp"
+        android:layout_marginRight="8dp"
+        android:adjustViewBounds="true"
+        android:background="@drawable/button"
+        android:contentDescription="LongHistory"
+        android:onClick="longHistoryMeter"
+        android:src="@mipmap/bt_meter_history" />
 
     <ImageButton
         android:id="@+id/buttonXY"
