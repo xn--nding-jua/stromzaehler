@@ -157,7 +157,6 @@ public class LongHistory {
     
     public void fromByteBuffer(ByteBuffer ByteBufferData){
         LongHistoryList.clear();
-        
         int numElements = ByteBufferData.getInt();
         for (int i=0; i<numElements; i++) {
             LongHistoryElement LHE = new LongHistoryElement();

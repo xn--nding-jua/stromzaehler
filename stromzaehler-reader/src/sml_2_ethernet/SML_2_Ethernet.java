@@ -88,8 +88,8 @@ class DoSecondTask extends TimerTask
             int energy_280_lasthour = SML_2_Ethernet.SML2EthernetAppData.history_value_280_hour[0];
             
             // add the values of last hour for 180 and 280 to longhistory and save it to file
-            SML_2_Ethernet.SML2EthernetLongHistory.add(energy_180_lasthour, energy_280_lasthour);
-            SML_2_Ethernet.SaveLongHistoryData(SML_2_Ethernet.SML2EthernetLongHistory, System.getProperty("user.dir") + "/longhistory.gz");
+            SML_2_Ethernet.SML2EthernetAppData.longHistory.add(energy_180_lasthour, energy_280_lasthour);
+            SML_2_Ethernet.SaveLongHistoryData(SML_2_Ethernet.SML2EthernetAppData.longHistory, System.getProperty("user.dir") + "/longhistory.gz");
             
             // upload data to ELK
             SML_2_Ethernet.UpdateELKSensors(energy_180_lasthour, energy_280_lasthour);
@@ -111,7 +111,6 @@ public class SML_2_Ethernet {
     static public DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     public static AppData SML2EthernetAppData;
-    public static LongHistory SML2EthernetLongHistory;
     static PowerController myPowerController;
     static cConfig config;
 
@@ -131,7 +130,7 @@ public class SML_2_Ethernet {
         
         // create data-classes for communcation
         SML2EthernetAppData = LoadOrCreateHistoryData(System.getProperty("user.dir") + "/history.gz");
-        SML2EthernetLongHistory = LoadOrCreateLongHistoryData(System.getProperty("user.dir") + "/longhistory.gz");
+        SML2EthernetAppData.longHistory = LoadOrCreateLongHistoryData(System.getProperty("user.dir") + "/longhistory.gz");
         
         // start timers
         Timer timer_hour = new Timer();
@@ -217,7 +216,7 @@ public class SML_2_Ethernet {
     }
     
     static void SaveHistoryData(AppData History, String Filename) {
-        byte[] HistoryArray = History.toByteBuffer(2, null).array(); // on HistoryLevel=2 we do not need to give LongHistory as parameter
+        byte[] HistoryArray = History.toByteBuffer(2).array(); // on HistoryLevel=2 we do not need to give LongHistory as parameter
         // compress the data
         HistoryArray=Compression.CompressByteArray(HistoryArray, false);
 
@@ -250,7 +249,7 @@ public class SML_2_Ethernet {
                 HistoryArray=Compression.DecompressByteArray(HistoryArray, false);
                 System.out.print("Decompressed " + HistoryArray.length/1024/1024 + "MB...");
 
-                History.fromByteBuffer(ByteBuffer.wrap(HistoryArray), 2, null); // on HistoryLevel=2 we do not need to give LongHistory as parameter
+                History.fromByteBuffer(ByteBuffer.wrap(HistoryArray)); // on HistoryLevel=2 we do not need to give LongHistory as parameter
                 System.out.println(" Done.");
             }else{
                 System.out.println(" No history-file found.");
@@ -628,7 +627,7 @@ public class SML_2_Ethernet {
                             // C:DATA=0, C:DATA=1, C:DATA=2, C:DATA=3
                             int HistoryLevel = Integer.parseInt(String.copyValueOf(ReceivedData.toCharArray(), ReceivedData.indexOf("=")+1, ReceivedData.length()-ReceivedData.indexOf("=")-1));
 
-                            byte[] AppDataArray = SML2EthernetAppData.toByteBuffer(HistoryLevel, SML2EthernetLongHistory).array();
+                            byte[] AppDataArray = SML2EthernetAppData.toByteBuffer(HistoryLevel).array();
                             // compress the data and send GetAllTemperature-Data to client
                             AppDataArray=Compression.CompressByteArray(AppDataArray, false);
 

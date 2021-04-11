@@ -12,28 +12,33 @@ public class AppData {
     public int value_180_day=0;
     public int value_280_day=0;
     public int power=0;
+
+    public byte HistoryLevel=0;
     
     public int[] history_value_180_hour = new int[168]; // values for the last 7 days
     public int[] history_value_280_hour = new int[168]; // values for the last 7 days
     public int[] history_power_seconds = new int[604800]; // values for the last 7 days = 168h * 60min * 60s = 604800
 
-    public ByteBuffer toByteBuffer(int HistoryLevel, LongHistory History) {
+    public LongHistory longHistory = new LongHistory();
+    
+    public ByteBuffer toByteBuffer(int DesiredHistoryLevel) {
+        HistoryLevel=(byte)DesiredHistoryLevel;
         ByteBuffer buffer;
         switch (HistoryLevel) {
             case 1:
                 // current values and hourly-based values for the last 7 days
-                buffer = ByteBuffer.allocate(2+20+1344); // 1.3kB per message
+                buffer = ByteBuffer.allocate(2+21+1344); // 1.3kB per message
                 break;
             case 2:
                 // current values, hourly-based values and second-based power-curve for the last 7 days
-                buffer = ByteBuffer.allocate(2+20+1344+2419200); // 2.3MB (uncompressed)
+                buffer = ByteBuffer.allocate(2+21+1344+2419200); // 2.3MB (uncompressed)
                 break;
             case 3:
                 // total hourly-based history for 180- and 280-values (13-bytes per hour -> 111kB per year)
-                buffer = ByteBuffer.allocate(2+20+4+History.sizeInBytes());
+                buffer = ByteBuffer.allocate(2+21+4+longHistory.sizeInBytes());
                 break;
             default:
-                buffer = ByteBuffer.allocate(2+20);
+                buffer = ByteBuffer.allocate(2+21);
                 break;
         }
         buffer.putShort(Version);
@@ -44,6 +49,8 @@ public class AppData {
         buffer.putInt(value_280_day);
         buffer.putInt(power);
 
+        buffer.put(HistoryLevel);
+        
         // add hourly-based ring-buffer of 180 and 280 values for the last 7 days
         if ((HistoryLevel==1) || (HistoryLevel==2)) {
             for (int i=0; i<history_value_180_hour.length; i++) {
@@ -63,8 +70,8 @@ public class AppData {
         
         // add full LongHistory
         if (HistoryLevel==3) {
-            int numberOfBytes = History.sizeInBytes();
-            byte[] LongHistoryArray = History.toByteBuffer().array();
+            int numberOfBytes = longHistory.sizeInBytes();
+            byte[] LongHistoryArray = longHistory.toByteBuffer().array();
             buffer.putInt(numberOfBytes);
             buffer.put(LongHistoryArray);
         }
@@ -76,7 +83,7 @@ public class AppData {
         return buffer;
     }
     
-    public void fromByteBuffer(ByteBuffer ByteBufferData, int HistoryLevel, LongHistory History) {
+    public void fromByteBuffer(ByteBuffer ByteBufferData) {
         Short ReceivedVersion = ByteBufferData.getShort();
         
         value_180 = ByteBufferData.getInt();
@@ -85,6 +92,8 @@ public class AppData {
         value_280_day = ByteBufferData.getInt();
         power = ByteBufferData.getInt();
 
+        HistoryLevel = ByteBufferData.get();
+        
         // get hourly-based ring-buffer of 180 and 280 values for the last 7 days
         if ((HistoryLevel==1) || (HistoryLevel==2)) {
             for (int i=0; i<history_value_180_hour.length; i++) {
@@ -101,13 +110,13 @@ public class AppData {
                 }
             }
         }
-                
+
         // get full LongHistory
         if (HistoryLevel==3) {
             int numberOfBytes = ByteBufferData.getInt();
             byte[] LongHistoryArray = new byte[numberOfBytes];
             ByteBufferData.get(LongHistoryArray, 0, numberOfBytes);
-            History.fromByteBuffer(ByteBuffer.wrap(LongHistoryArray));
+            longHistory.fromByteBuffer(ByteBuffer.wrap(LongHistoryArray));
         }
         
         // bei neuerer Version einfach hier hinten weitere Daten anhängen
