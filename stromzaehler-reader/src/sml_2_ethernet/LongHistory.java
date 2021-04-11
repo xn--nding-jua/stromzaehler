@@ -28,7 +28,7 @@ public class LongHistory {
         Calendar calendar = Calendar.getInstance();
         LHE.Hour = (byte)calendar.get(Calendar.HOUR_OF_DAY);
         LHE.Day = (byte)calendar.get(Calendar.DAY_OF_MONTH);
-        LHE.Month = (byte)calendar.get(Calendar.MONTH);
+        LHE.Month = (byte)(calendar.get(Calendar.MONTH)+1); // January is 0, so add 1
         LHE.Year = (short)calendar.get(Calendar.YEAR);
         LHE.value_180=value_180;
         LHE.value_280=value_280;
@@ -38,12 +38,12 @@ public class LongHistory {
     
     // we have several overloaded get() functions for the individual time-ranges
     // return 180 and 280 for a complete year
-    public LongHistoryElement get(short Year){
+    public LongHistoryElement get(int Year){
         LongHistoryElement LHE = new LongHistoryElement();
         LHE.Hour=-1;
         LHE.Day=-1;
         LHE.Month=-1;
-        LHE.Year=Year;
+        LHE.Year=(short)Year;
         LHE.value_180=0;
         LHE.value_280=0;
         
@@ -59,12 +59,12 @@ public class LongHistory {
     }
 
     // return 180 and 280 for a total month
-    public LongHistoryElement get(byte Month, short Year){
+    public LongHistoryElement get(int Month, int Year){
         LongHistoryElement LHE = new LongHistoryElement();
         LHE.Hour=-1;
         LHE.Day=-1;
-        LHE.Month=Month;
-        LHE.Year=Year;
+        LHE.Month=(byte)Month;
+        LHE.Year=(short)Year;
         LHE.value_180=0;
         LHE.value_280=0;
         
@@ -80,12 +80,12 @@ public class LongHistory {
     }
     
     // return 180 and 280 for a day
-    public LongHistoryElement get(byte Day, byte Month, short Year){
+    public LongHistoryElement get(int Day, int Month, int Year){
         LongHistoryElement LHE = new LongHistoryElement();
         LHE.Hour=-1;
-        LHE.Day=Day;
-        LHE.Month=Month;
-        LHE.Year=Year;
+        LHE.Day=(byte)Day;
+        LHE.Month=(byte)Month;
+        LHE.Year=(short)Year;
         LHE.value_180=0;
         LHE.value_280=0;
         
@@ -106,17 +106,21 @@ public class LongHistory {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(Begin);
         byte Day = (byte)calendar.get(Calendar.DAY_OF_MONTH);
-        byte Month = (byte)calendar.get(Calendar.MONTH);
+        byte Month = (byte)(calendar.get(Calendar.MONTH)+1);
         byte Year = (byte)calendar.get(Calendar.YEAR);
         int FirstElement = 0;
-        int LastElement = 0;
-        
         for (int i=0; i<LongHistoryList.size(); i++) {
             if ((LongHistoryList.get(i).Year==Year) && (LongHistoryList.get(i).Month==Month) && (LongHistoryList.get(i).Day==Day)) {
                 FirstElement=i;
                 break;
             }
         }
+
+        calendar.setTime(End);
+        Day = (byte)calendar.get(Calendar.DAY_OF_MONTH);
+        Month = (byte)(calendar.get(Calendar.MONTH)+1);
+        Year = (byte)calendar.get(Calendar.YEAR);
+        int LastElement = 0;
         for (int i=LongHistoryList.size(); i>0; i--) {
             if ((LongHistoryList.get(i).Year==Year) && (LongHistoryList.get(i).Month==Month) && (LongHistoryList.get(i).Day==Day)) {
                 LastElement=i;
