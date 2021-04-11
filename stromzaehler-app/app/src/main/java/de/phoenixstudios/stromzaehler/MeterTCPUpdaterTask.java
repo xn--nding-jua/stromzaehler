@@ -121,7 +121,7 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       // update graph
       GraphView graph = (GraphView) activity.findViewById(R.id.graph);
 
-      if (HelperFunctions.HistoryLevel==0) {
+      if (value.HistoryLevel==0) {
          // show realtime graph
          Date d1 = Calendar.getInstance().getTime();
          if (ResetGraph) {
@@ -166,7 +166,7 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
          graph.getViewport().setXAxisBoundsManual(true);
          graph.getViewport().setMinX(value_180.getLowestValueX());
          graph.getViewport().setMaxX(value_180.getHighestValueX());
-      }else{
+      }else if ((value.HistoryLevel==1) || (value.HistoryLevel==2)){
          // plot energies of the last 7 days (168 hours) as bar-graphs
          Calendar calendar = Calendar.getInstance(); // for bar-graphs to set only full hours
          Calendar calendar2 = Calendar.getInstance(); // for power which is minutes-based
@@ -193,7 +193,7 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
          // reset the graph
          value_180.resetData(new DataPoint[] {new DataPoint(d1, value.history_value_180_hour[value.history_value_180_hour.length-1]/1000.0)});
          value_280.resetData(new DataPoint[] {new DataPoint(d1, -value.history_value_280_hour[value.history_value_180_hour.length-1]/1000.0)});
-         if (HelperFunctions.HistoryLevel==1) {
+         if (value.HistoryLevel==1) {
             // we have no power-data in HistoryLevel 1
             power.resetData(new DataPoint[]{new DataPoint(d2, 0)});
          }else{
@@ -247,7 +247,7 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
          graph.getViewport().setMinX(d1.getTime());
          //graph.getViewport().setMinX(TemperatureCurve1.getLowestValueX());
 
-         if (HelperFunctions.HistoryLevel==2) {
+         if (value.HistoryLevel==2) {
             // plot power of the last 7 days (second-values) as graph
 
             int NumberOfMeanValues=60; // seconds
@@ -286,6 +286,103 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
          graph.getSecondScale().setMinY(LowestVoltage*0.9);
          graph.getSecondScale().setMaxY(HighestVoltage*1.1);
          */
+      }else{
+         // plot long-history of all days as bar-graphs
+
+         // get first and last elements:
+         LongHistory.LongHistoryElement FirstElement = value.longHistory.getFirstElement();
+         LongHistory.LongHistoryElement LastElement = value.longHistory.getLastElement();
+
+         // calendar-object for the last element
+         Calendar calendarLastElement = Calendar.getInstance();
+         calendarLastElement.set(Calendar.YEAR, LastElement.Year);
+         calendarLastElement.set(Calendar.MONTH, LastElement.Month-1);
+         calendarLastElement.set(Calendar.DAY_OF_MONTH, LastElement.Day);
+         calendarLastElement.set(Calendar.HOUR_OF_DAY, 0);
+         calendarLastElement.set(Calendar.MINUTE, 0);
+         calendarLastElement.set(Calendar.SECOND, 0);
+         calendarLastElement.set(Calendar.MILLISECOND, 0);
+
+         // calendar-object for current day
+         Calendar calendar = Calendar.getInstance();
+         calendar.set(Calendar.YEAR, FirstElement.Year);
+         calendar.set(Calendar.MONTH, FirstElement.Month-1); // 0...11
+         calendar.set(Calendar.DAY_OF_MONTH, FirstElement.Day);
+         calendar.set(Calendar.HOUR_OF_DAY, 0);
+         calendar.set(Calendar.MINUTE, 0);
+         calendar.set(Calendar.SECOND, 0);
+
+         Date DateFirstElement = new Date();
+         DateFirstElement.setTime(calendar.getTime().getTime());
+
+         // iterate through all days and add day-values to graph
+         LongHistory.LongHistoryElement DayValue;
+
+         // reset the graph and plot first element at 00:00:00
+         Date d1 = calendar.getTime();
+         DayValue = value.longHistory.get(calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.MONTH)+1, calendar.get(Calendar.YEAR));
+         value_180.resetData(new DataPoint[] {new DataPoint(d1, DayValue.value_180/1000.0)});
+         value_280.resetData(new DataPoint[] {new DataPoint(d1, -DayValue.value_280/1000.0)});
+
+         // plot the values at 23:59:59
+         calendar.set(Calendar.HOUR_OF_DAY, 23);
+         calendar.set(Calendar.MINUTE, 59);
+         calendar.set(Calendar.SECOND, 59);
+         d1 = calendar.getTime();
+         value_180.appendData(new DataPoint(d1, DayValue.value_180/1000.0), false, 3000);
+         value_280.appendData(new DataPoint(d1, -DayValue.value_280/1000.0), false, 3000);
+
+         while(calendar.getTime().getTime()<calendarLastElement.getTime().getTime()) {
+            // go one day further
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.add(Calendar.HOUR_OF_DAY, 24); // go one day ahead
+
+            // get day-values
+            DayValue = value.longHistory.get(calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.MONTH)+1, calendar.get(Calendar.YEAR));
+
+            // plot the values at 00:00:00
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            d1 = calendar.getTime();
+            value_180.appendData(new DataPoint(d1, DayValue.value_180/1000.0), false, 3000);
+            value_280.appendData(new DataPoint(d1, -DayValue.value_280/1000.0), false, 3000);
+
+            // plot the values at 23:59:59
+            calendar.set(Calendar.HOUR_OF_DAY, 23);
+            calendar.set(Calendar.MINUTE, 59);
+            calendar.set(Calendar.SECOND, 59);
+            d1 = calendar.getTime();
+            value_180.appendData(new DataPoint(d1, DayValue.value_180/1000.0), false, 3000);
+            value_280.appendData(new DataPoint(d1, -DayValue.value_280/1000.0), false, 3000);
+         }
+
+         //do{
+         //}while();
+
+         SimpleDateFormat fmt_axis = new SimpleDateFormat("dd.MM.\nYYYY");
+         graph.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(activity, fmt_axis));
+         graph.getGridLabelRenderer().setNumHorizontalLabels(6); // only 6 vertical lines because of the space
+
+         double HighestYValue = Math.max(value_180.getHighestValueY(), value_280.getHighestValueY());
+         double LowestYValue = Math.min(value_180.getLowestValueY(), value_280.getLowestValueY());
+
+         // scale X-axis
+         d1 = calendar.getTime();
+         graph.getViewport().setMaxX(d1.getTime());
+         graph.getViewport().setMinX(DateFirstElement.getTime());
+         //graph.getViewport().setMinX(TemperatureCurve1.getLowestValueX());
+
+         // scale Y-axis
+         graph.getViewport().setYAxisBoundsManual(true);
+         if (LowestYValue<0){
+            graph.getViewport().setMinY(LowestYValue * 1.1);
+         }else {
+            graph.getViewport().setMinY(LowestYValue * 0.9);
+         }
+         graph.getViewport().setMaxY(HighestYValue*1.1);
       }
    }
 
@@ -294,9 +391,12 @@ public class MeterTCPUpdaterTask extends TCPUpdaterTask
       ResetGraph = true;
       HelperFunctions.TCPCommandString="C:DATA=0"; // DATA=0 -> HistoryLevel=0 -> Request no history-data
    }
-   public void showHistory()
+
+   public void showHistory(int HistoryLevel)
    {
-      HelperFunctions.TCPCommandString="C:DATA=2"; // DATA=2 -> HistoryLevel=2 -> Request full history-data (with Power-history)
+      // DATA=2 -> HistoryLevel=2 -> Request 7-day history-data (with Power-history)
+      // DATA=3 -> HistoryLevel=3 -> Request long-history-data (hour-based, additional functions via LongHistory-class)
+      HelperFunctions.TCPCommandString="C:DATA="+HistoryLevel;
    }
 
    public void switchXY(Activity activity)

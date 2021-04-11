@@ -46,7 +46,12 @@ public class MeterActivity extends Activity
 
    public void historyMeter(@SuppressWarnings("unused") final View view)
    {
-      ((MeterTCPUpdaterTask) task).showHistory();
+      ((MeterTCPUpdaterTask) task).showHistory(2);
+   }
+
+   public void longHistoryMeter(@SuppressWarnings("unused") final View view)
+   {
+      ((MeterTCPUpdaterTask) task).showHistory(3);
    }
 
    public void switchXYMeter(@SuppressWarnings("unused") final View view)

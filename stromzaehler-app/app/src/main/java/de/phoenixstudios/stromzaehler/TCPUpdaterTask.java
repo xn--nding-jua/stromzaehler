@@ -118,22 +118,9 @@ public abstract class TCPUpdaterTask extends AsyncTask<Void, AppData, Void>
 
                             // Decompress data if desired
                             ValuesArray = Compression.DecompressByteArray(ValuesArray, false);
-                            HelperFunctions.HistoryLevel = Integer.parseInt(String.copyValueOf(HelperFunctions.TCPCommandString.toCharArray(), HelperFunctions.TCPCommandString.indexOf("=") + 1, HelperFunctions.TCPCommandString.length() - HelperFunctions.TCPCommandString.indexOf("=") - 1));
-                            int ExpectedArrayLength;
-                            switch (HelperFunctions.HistoryLevel) {
-                                case 1:
-                                    ExpectedArrayLength=2+20+1344; // small history with energy-values for 168 hours
-                                    break;
-                                case 2:
-                                    ExpectedArrayLength=2+20+1344+2419200; // extended history with additional power-values for 168 hours in seconds
-                                    break;
-                                default:
-                                    ExpectedArrayLength=22; // only 1.8.0, 2.8.0 and current power-values
-                                    break;
-                            }
-                            if ((ValuesArray != null) && (ValuesArray.length >= ExpectedArrayLength)) {
+                            if (ValuesArray != null) {
                                 AppData values = new AppData();
-                                values.fromByteBuffer(ByteBuffer.wrap(ValuesArray), HelperFunctions.HistoryLevel);
+                                values.fromByteBuffer(ByteBuffer.wrap(ValuesArray));
                                 publishProgress(values);
                             }
                         }

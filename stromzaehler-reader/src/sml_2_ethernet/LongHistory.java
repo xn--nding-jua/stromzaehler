@@ -100,6 +100,18 @@ public class LongHistory {
         return LHE;
     }
 
+    public LongHistoryElement getElement(int Element) {
+        return LongHistoryList.get(Element);
+    }
+
+    public LongHistoryElement getFirstElement() {
+        return LongHistoryList.get(0);
+    }
+
+    public LongHistoryElement getLastElement() {
+        return LongHistoryList.get(LongHistoryList.size()-1);
+    }
+    
     public List<LongHistoryElement> get(Date Begin, Date End){
         // the elements are in order - so we can search for the first and last element and put it to the new list
         // so first step: search for the first and last element
