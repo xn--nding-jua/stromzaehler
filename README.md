@@ -6,6 +6,12 @@ Folgende Andwendungen sind in diesem Repository enthalten:
 1. Android-App (stromzaehler-app)
   - Anzeige der aktuellen Werte als Zahlenwerte, Live-Graph und als 7-Tage-Historie
   - Android 4
+![image](https://user-images.githubusercontent.com/9845353/114463556-dbf44680-9be4-11eb-9e46-13ee6c282f7a.png)
+![image](https://user-images.githubusercontent.com/9845353/114463572-deef3700-9be4-11eb-8718-5b3d537d3168.png)
+![image](https://user-images.githubusercontent.com/9845353/114463581-e1ea2780-9be4-11eb-889f-b807155ff52a.png)
+
+![image](https://user-images.githubusercontent.com/9845353/114463513-ce3ec100-9be4-11eb-93cf-e25ac877e53a.png)
+
 2. Java-Anwendung für RaspberryPi (stromzaehler-reader)
   - Java 1.8 Anwendung. Nutzt den IR-Schreib-/Lesekopf z.B. von Volkszaehler.org oder anderen Quellen via Built-in-UART
   - berechnet 7-Tage-Historie und dient als Netzwerkserver für Android-App und ESP8266
