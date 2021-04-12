@@ -13,6 +13,11 @@ Folgende Andwendungen sind in diesem Repository enthalten:
   - ESP8266-Anwendung ruft Funktion zum Berechnen eines PID-Reglers innerhalb des Java-Servers auf
   - Regler nimmt als Sollwert die gewünschte Leistung an, die in Richtung Stromnetz übertragen werden soll
   - Ausgang des Reglers steuert einen PWM-Ausgang am ESP8266 und über die sekundäre UART einen DMX512-Ausgang zum Ansteuern von Glühlampen oder Heizungen
+4. Web-Anwendung (stromzaehler-phpclient)
+  - über beliebige Webbrowser werden die wichtigsten Werte angezeigt
+  - via Chartjs wird zudem die 7-Tage-History für 1.8.0 und 2.8.0 als Bargraph angezeigt:
+![image](https://user-images.githubusercontent.com/9845353/114463354-9e8fb900-9be4-11eb-96b6-07cbc800753c.png)
+
 
 Da der alte Code für Eclipse geschrieben wurde, habe ich in diesem Fork die Android-App auf Android Studio 4 und den restlichen Code auf NetBeans 11 migriert.
 
