@@ -59,8 +59,8 @@ https://code.jquery.com/jquery-3.6.0.min.js
       */
 
       // request AppData containing full-data via ByteBuffer
-      $cmd = "C:DATA=1\n"; // 2+21 bytes // request only current values
-      //$cmd = "C:DATA=1"; // 2+21+1344 bytes = contains last 7 days
+      //$cmd = "C:DATA=0\n"; // 2+21 bytes = request only current values
+      $cmd = "C:DATA=1\n"; // 2+21+1344 bytes = request last 7 days as hour-values
       socket_write($socket, $cmd, strlen($cmd));
 
       // read length of data
@@ -99,14 +99,14 @@ https://code.jquery.com/jquery-3.6.0.min.js
         // read 168 4-byte ints for 180-history
         $AppData_180HistoryArray = unpack("N168", $ans_data, 23); // unpack integer-array with 168 entries
         // Wh -> kWh
-        for ($i = 1; $i <= 83; $i++) {
+        for ($i = 1; $i <= 168; $i++) {
           $AppData_180HistoryArray[$i] = $AppData_180HistoryArray[$i]/1000;
         }
 
         // read 168 4-byte ints for 280-history
         $AppData_280HistoryArray = unpack("N168", $ans_data, 23+672); // unpack integer-array with 168 entries
         // Wh -> kWh and put to negative part
-        for ($i = 1; $i <= 83; $i++) {
+        for ($i = 1; $i <= 168; $i++) {
           $AppData_280HistoryArray[$i] = -$AppData_280HistoryArray[$i]/1000;
         }
 
