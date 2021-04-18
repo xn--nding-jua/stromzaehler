@@ -15,12 +15,12 @@ https://code.jquery.com/jquery-3.6.0.min.js
 <html>
 <head>
   <title>Stromverbrauch</title>
-  <meta http-equiv="refresh" content="50" />
+  <meta http-equiv="refresh" content="5" />
   <style type="text/css">
     .box { margin:25px auto;}
-    .value180 { line-height:30px; float:center; font-size:20pt; color:#FF0000; }
-    .value280 { line-height:30px; float:center; font-size:20pt; color:#00AF00; }
-    .power { line-height:30px; float:center; font-size:20pt; color:#000000; }
+    .value180 { line-height:60px; float:center; font-size:40pt; color:#FF0000; }
+    .value280 { line-height:60px; float:center; font-size:40pt; color:#00AF00; }
+    .power { line-height:80px; float:center; font-size:60pt; color:#000000; }
     .shadow { text-shadow: 0 0 5px #123; }
 
     #chart-container {
@@ -59,8 +59,8 @@ https://code.jquery.com/jquery-3.6.0.min.js
       */
 
       // request AppData containing full-data via ByteBuffer
-      //$cmd = "C:DATA=0\n"; // 2+21 bytes = request only current values
-      $cmd = "C:DATA=1\n"; // 2+21+1344 bytes = request last 7 days as hour-values
+      $cmd = "C:DATA=0\n"; // 2+21 bytes = request only current values
+      //$cmd = "C:DATA=1\n"; // 2+21+1344 bytes = request last 7 days as hour-values
       socket_write($socket, $cmd, strlen($cmd));
 
       // read length of data
@@ -143,12 +143,12 @@ https://code.jquery.com/jquery-3.6.0.min.js
 
   // plot the values on the website
   echo "<div class=\"box\">";
-  echo "<div class=\"value180\">"."1.8.0 (Bezug) Gesamt: ". number_format($AppData_value_180/1000, 3, ',', '.') . " kWh | Heute: " . number_format($AppData_value_180_day/1000, 3, ',', '.') . " kWh</div>\n";
+  echo "<div class=\"value180\">"."1.8.0 (Bezug)<br>Gesamt: ". number_format($AppData_value_180/1000, 3, ',', '.') . " kWh<br>Heute: " . number_format($AppData_value_180_day/1000, 3, ',', '.') . " kWh</div>\n";
   echo "<div style=\"clear:both;\"></div>\n";
   echo "</div>\n";
 
   echo "<div class=\"box\">";
-  echo "<div class=\"value280\">"."2.8.0 (Einspeisung) Gesamt: ". number_format($AppData_value_280/1000, 3, ',', '.') . " kWh | Heute: " . number_format($AppData_value_280_day/1000, 3, ',', '.') . " kWh</div>\n";
+  echo "<div class=\"value280\">"."2.8.0 (Einspeisung)<br>Gesamt: ". number_format($AppData_value_280/1000, 3, ',', '.') . " kWh<br>Heute: " . number_format($AppData_value_280_day/1000, 3, ',', '.') . " kWh</div>\n";
   echo "<div style=\"clear:both;\"></div>\n";
   echo "</div>\n";
 
@@ -161,56 +161,6 @@ https://code.jquery.com/jquery-3.6.0.min.js
 
 </center></b>
 </font>
-
-<!-- Draw the chart-graph for the 7-day-history -->
-<div id="chart-container">
-    <canvas id="graphCanvas" width="400" height="200"></canvas>
-</div>
-
-<script>
-
-const data = {
-  datasets: [
-    {
-      label: '1.8.0',
-      backgroundColor: 'rgb(255, 0, 0)',
-      borderColor: 'rgb(255, 0, 0)',
-      data: <?php echo json_encode($AppData_180HistoryArray); ?>
-    },
-    {
-      label: '2.8.0',
-      backgroundColor: 'rgb(0, 192, 0)',
-      borderColor: 'rgb(0, 192, 0)',
-      data: <?php echo json_encode($AppData_280HistoryArray); ?>
-    }
-  ]
-};
-
-const config = {
-  type: 'bar',
-  data,
-  options: {
-    scales: {
-      x: {
-        reverse: true,
-        stacked: true
-      }
-    },
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top'
-      },
-      title: {
-        display: true,
-        text: '7-Tage Smart-Meter-History'
-      }
-    }
-  }
-};
-
-  var graphCanvas = new Chart(document.getElementById('graphCanvas'), config);
-</script>
 
 </body>
 </html>
