@@ -22,11 +22,6 @@ https://code.jquery.com/jquery-3.6.0.min.js
     .value280 { line-height:30px; float:center; font-size:20pt; color:#00AF00; }
     .power { line-height:30px; float:center; font-size:20pt; color:#000000; }
     .shadow { text-shadow: 0 0 5px #123; }
-
-    #chart-container {
-      width: 100%;
-      height: auto;
-    }
   </style>
   <script type="text/javascript" src="js/jquery.min.js"></script>
   <script type="text/javascript" src="js/chart.min.js"></script>
@@ -40,6 +35,8 @@ https://code.jquery.com/jquery-3.6.0.min.js
   // read the current values from server
   $address = '127.0.0.1'; // local server
   $port = 51534;
+
+  date_default_timezone_set('Europe/Berlin');
 
   $connectionok = true;
   $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
@@ -98,9 +95,19 @@ https://code.jquery.com/jquery-3.6.0.min.js
         // we received a Level 1 history. So we can decode this
         // read 168 4-byte ints for 180-history
         $AppData_180HistoryArray = unpack("N168", $ans_data, 23); // unpack integer-array with 168 entries
+
+        // prepare some DateTime-values for the x-axis description
+        $x_axis = array();
+        $x_axis_date = new DateTime(date('H:i:s d.m.Y'));
+        $x_axis_date->modify('+2 hour');
+
         // Wh -> kWh
         for ($i = 1; $i <= 168; $i++) {
           $AppData_180HistoryArray[$i] = $AppData_180HistoryArray[$i]/1000;
+
+          // create the x-axis-description for each entry
+          $x_axis_date->modify('-1 hour');
+          $x_axis[$i]=strval($x_axis_date->format('H \U\h\r d.m.'));
         }
 
         // read 168 4-byte ints for 280-history
@@ -163,25 +170,24 @@ https://code.jquery.com/jquery-3.6.0.min.js
 </font>
 
 <!-- Draw the chart-graph for the 7-day-history -->
-<div id="chart-container">
-    <canvas id="graphCanvas" width="400" height="200"></canvas>
-</div>
+<canvas id="graphCanvas" width="100%" height="40"></canvas>
 
 <script>
 
 const data = {
+  labels: <?php echo "[\"" . implode("\", \"",$x_axis) . "\"]"; ?>,
   datasets: [
     {
       label: '1.8.0',
       backgroundColor: 'rgb(255, 0, 0)',
       borderColor: 'rgb(255, 0, 0)',
-      data: <?php echo json_encode($AppData_180HistoryArray); ?>
+      data: <?php echo "[\"" . implode("\", \"",$AppData_180HistoryArray) . "\"]"; ?>
     },
     {
       label: '2.8.0',
       backgroundColor: 'rgb(0, 192, 0)',
       borderColor: 'rgb(0, 192, 0)',
-      data: <?php echo json_encode($AppData_280HistoryArray); ?>
+      data: <?php echo "[\"" . implode("\", \"",$AppData_280HistoryArray) . "\"]"; ?>
     }
   ]
 };
@@ -194,6 +200,13 @@ const config = {
       x: {
         reverse: true,
         stacked: true
+/*
+        ticks: {
+          callback: function(value, index, values) {
+            return '$' + value;
+          }
+        }
+*/
       }
     },
     responsive: true,
